@@ -8,6 +8,10 @@ import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useLocation } from '@/context/LocationContext';
+import dynamic from 'next/dynamic';
+
+const LocationPickerModal = dynamic(() => import('./LocationPickerModal'), { ssr: false });
 
 const navLinks = [
   { name: 'Home',        href: '/' },
@@ -20,10 +24,12 @@ const navLinks = [
 export default function Header() {
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
+  const { location } = useLocation();
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +62,7 @@ export default function Header() {
   };
 
   return (
+    <>
     <header className="sticky top-0 z-50 bg-base/80 backdrop-blur-md border-b border-base" ref={mobileMenuRef}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
@@ -63,10 +70,19 @@ export default function Header() {
             <Logo />
           </Link>
 
-          <div className="hidden md:flex items-center gap-1 text-sm text-muted bg-base-secondary px-3 py-1.5 rounded-full border border-base">
-            <MapPin size={16} className="text-primary" />
-            <span>Deliver to: <span className="text-fg font-medium">Mumbai, 400001</span></span>
-          </div>
+          <button
+            onClick={() => setLocationModalOpen(true)}
+            className="hidden md:flex items-center gap-1.5 text-sm text-muted bg-base-secondary px-3 py-1.5 rounded-full border border-base hover:border-primary hover:text-primary transition-colors group max-w-[220px]"
+          >
+            <MapPin size={15} className="text-primary shrink-0" />
+            <span className="truncate">
+              Deliver to:{' '}
+              <span className={`font-medium ${location ? 'text-primary' : 'text-fg'}`}>
+                {location ? location.label : 'Mumbai, 400001'}
+              </span>
+            </span>
+            <ChevronDown size={13} className="shrink-0 ml-0.5 opacity-60 group-hover:opacity-100" />
+          </button>
 
           <nav className="hidden md:flex items-center gap-8 font-medium text-sm">
             {navLinks.map((link) => (
@@ -196,5 +212,8 @@ export default function Header() {
         )}
       </div>
     </header>
+
+    <LocationPickerModal open={locationModalOpen} onClose={() => setLocationModalOpen(false)} />
+    </>
   );
 }

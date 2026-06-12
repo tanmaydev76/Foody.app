@@ -3,6 +3,7 @@ import './globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { LocationProvider } from '@/context/LocationContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -34,11 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-base text-fg min-h-screen flex flex-col">
         <ThemeProvider>
           <AuthProvider>
+            <LocationProvider>
             <CartProvider>
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
             </CartProvider>
+            </LocationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
