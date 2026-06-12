@@ -9,9 +9,11 @@ export interface Restaurant {
   promoted: boolean;
   offer?: string;
   category: string;
+  lat: number;
+  lng: number;
+  area: string;
 }
 
-/* Curated Unsplash photo IDs — fast CDN, no search delay */
 function u(id: string) {
   return `https://images.unsplash.com/${id}?w=600&h=400&fit=crop&auto=format&q=75`;
 }
@@ -24,6 +26,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Pizza', 'Italian', 'Pasta'],
     rating: 4.5, priceForOne: 400, deliveryTime: 25,
     promoted: true, offer: '₹100 OFF', category: 'Pizza',
+    lat: 19.0596, lng: 72.8295, area: 'Bandra West',
   },
   {
     id: 2,
@@ -32,6 +35,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Burgers', 'Fast Food', 'Snacks'],
     rating: 4.3, priceForOne: 250, deliveryTime: 20,
     promoted: false, offer: '20% OFF', category: 'Burgers',
+    lat: 19.1136, lng: 72.8697, area: 'Andheri West',
   },
   {
     id: 3,
@@ -40,6 +44,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Biryani', 'North Indian', 'Kebab'],
     rating: 4.7, priceForOne: 350, deliveryTime: 35,
     promoted: true, offer: '₹100 OFF', category: 'Biryani',
+    lat: 19.0760, lng: 72.8777, area: 'Dadar',
   },
   {
     id: 4,
@@ -48,6 +53,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Chinese', 'Asian', 'Noodles'],
     rating: 4.2, priceForOne: 300, deliveryTime: 30,
     promoted: false, offer: 'Free Delivery', category: 'Chinese',
+    lat: 19.0330, lng: 72.8656, area: 'Kurla',
   },
   {
     id: 5,
@@ -56,6 +62,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['South Indian', 'Dosa', 'Idli'],
     rating: 4.6, priceForOne: 200, deliveryTime: 20,
     promoted: true, offer: '₹50 OFF', category: 'South Indian',
+    lat: 19.1724, lng: 72.9570, area: 'Thane West',
   },
   {
     id: 6,
@@ -64,6 +71,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['North Indian', 'Mughlai', 'Tandoor'],
     rating: 4.4, priceForOne: 450, deliveryTime: 40,
     promoted: false, offer: '₹100 OFF', category: 'North Indian',
+    lat: 19.0176, lng: 72.8562, area: 'Chembur',
   },
   {
     id: 7,
@@ -72,6 +80,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Rolls', 'Wraps', 'Fast Food'],
     rating: 4.1, priceForOne: 180, deliveryTime: 15,
     promoted: false, offer: 'Buy 2 Get 1', category: 'Rolls',
+    lat: 19.1041, lng: 72.8370, area: 'Goregaon West',
   },
   {
     id: 8,
@@ -80,6 +89,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Snacks', 'Street Food', 'Chaat'],
     rating: 4.3, priceForOne: 150, deliveryTime: 15,
     promoted: true, offer: '20% OFF', category: 'Snacks',
+    lat: 19.0454, lng: 72.8710, area: 'Sion',
   },
   {
     id: 9,
@@ -88,6 +98,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Desserts', 'Ice Cream', 'Cakes'],
     rating: 4.5, priceForOne: 200, deliveryTime: 25,
     promoted: false, offer: '₹50 OFF', category: 'Desserts',
+    lat: 19.0821, lng: 72.8908, area: 'Ghatkopar West',
   },
   {
     id: 10,
@@ -96,6 +107,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Beverages', 'Juices', 'Coffee'],
     rating: 4.4, priceForOne: 120, deliveryTime: 10,
     promoted: true, offer: 'Free Delivery', category: 'Beverages',
+    lat: 18.9388, lng: 72.8354, area: 'Colaba',
   },
   {
     id: 11,
@@ -104,6 +116,7 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Pizza', 'Italian', 'Pasta', 'Conti'],
     rating: 4.2, priceForOne: 400, deliveryTime: 35,
     promoted: true, offer: '₹100 OFF', category: 'Pizza',
+    lat: 19.0178, lng: 72.8478, area: 'Matunga',
   },
   {
     id: 12,
@@ -112,5 +125,6 @@ export const restaurants: Restaurant[] = [
     cuisines: ['Biryani', 'Kebab', 'North Indian'],
     rating: 4.8, priceForOne: 500, deliveryTime: 45,
     promoted: true, offer: '₹100 OFF', category: 'Biryani',
+    lat: 19.1215, lng: 72.9050, area: 'Powai',
   },
 ];
