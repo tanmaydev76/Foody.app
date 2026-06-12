@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { NextRequest } from 'next/server';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
-if (!JWT_SECRET) throw new Error('JWT_SECRET not set in .env.local');
+const JWT_SECRET = process.env.JWT_SECRET ?? '';
 
 export interface JwtPayload {
   userId: string;
@@ -11,6 +10,7 @@ export interface JwtPayload {
 }
 
 export function signToken(payload: JwtPayload) {
+  if (!JWT_SECRET) throw new Error('JWT_SECRET is not set. Add it to your Vercel environment variables.');
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
