@@ -1,0 +1,39 @@
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { connectDB } from '@/lib/mongodb';
+import User from '@/models/User';
+import { signToken } from '@/lib/auth';
+
+export async function POST(req: NextRequest) {
+  try {
+    const { name, email, password } = await req.json();
+
+    if (!name?.trim() || !email?.trim() || !password) {
+      return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ error: 'Invalid email address.' }, { status: 400 });
+    }
+    if (password.length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
+    }
+
+    await connectDB();
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      return NextResponse.json({ error: 'Email already in use.' }, { status: 409 });
+    }
+
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({ name: name.trim(), email: email.toLowerCase(), password: hashed });
+
+    const token = signToken({ userId: user._id.toString(), email: user.email, name: user.name });
+
+    const res = NextResponse.json({ user: { id: user._id, name: user.name, email: user.email } }, { status: 201 });
+    res.cookies.set('foody_token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' });
+    return res;
+  } catch (err) {
+    console.error('[signup]', err);
+    return NextResponse.json({ error: 'Server error.' }, { status: 500 });
+  }
+}

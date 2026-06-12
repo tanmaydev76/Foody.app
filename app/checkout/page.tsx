@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home } from 'lucide-react';
+import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CheckoutPage() {
   const { cart, subtotal, deliveryFee, discount, taxes, total, clearCart, itemCount, coupon } = useCart();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [form, setForm]           = useState({ name: '', phone: '', address: '', city: '', pincode: '' });
@@ -15,7 +17,14 @@ export default function CheckoutPage() {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId]     = useState('');
   const [errors, setErrors]       = useState<Record<string, string>>({});
+  const [placing, setPlacing]     = useState(false);
+  const [placeError, setPlaceError] = useState('');
   const [snapshot, setSnapshot]   = useState({ subtotal: 0, deliveryFee: 0, discount: 0, taxes: 0, total: 0, coupon: '' });
+
+  /* Pre-fill name from auth user */
+  useEffect(() => {
+    if (user && !form.name) setForm((f) => ({ ...f, name: user.name }));
+  }, [user]);
 
   useEffect(() => {
     if (!orderPlaced && cart.length === 0) router.replace('/menu');
@@ -37,15 +46,64 @@ export default function CheckoutPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const placeOrder = (e: React.FormEvent) => {
+  const placeOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0 || !validate()) return;
-    setSnapshot({ subtotal, deliveryFee, discount, taxes, total, coupon });
-    const id = 'FOODY' + Math.floor(100000 + Math.random() * 900000);
-    setOrderId(id);
+
+    const snap = { subtotal, deliveryFee, discount, taxes, total, coupon };
+    const newOrderId = 'FOODY' + Math.floor(100000 + Math.random() * 900000);
+
+    setPlacing(true);
+    setPlaceError('');
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart.map((i) => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, image: i.image ?? '' })),
+          subtotal, discount, coupon, deliveryFee, taxes, total,
+          address: `${form.address}, ${form.city} – ${form.pincode}`,
+          phone: form.phone,
+          paymentMethod: payment === 'cod' ? 'Cash on Delivery' : payment.toUpperCase(),
+          orderId: newOrderId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Failed to save order.');
+    } catch (err: any) {
+      setPlaceError(err.message);
+      setPlacing(false);
+      return;
+    }
+
+    setSnapshot(snap);
+    setOrderId(newOrderId);
     setOrderPlaced(true);
     clearCart();
+    setPlacing(false);
   };
+
+  /* ── Auth guard ── */
+  if (!authLoading && !user) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-5">
+          <LogIn size={28} className="text-primary" />
+        </div>
+        <h2 className="text-xl font-extrabold mb-2">Login to place your order</h2>
+        <p className="text-muted text-sm mb-6">You need to be logged in to complete checkout and track your orders.</p>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <Link href="/login?redirect=/checkout" className="bg-primary text-white font-semibold px-6 py-3 rounded-full hover:bg-primary-dark transition-colors">
+            Log In
+          </Link>
+          <Link href="/signup?redirect=/checkout" className="border border-base font-semibold px-6 py-3 rounded-full hover:bg-base-secondary transition-colors">
+            Sign Up
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (orderPlaced) {
     return (
@@ -72,9 +130,14 @@ export default function CheckoutPage() {
             <div className="flex justify-between font-bold border-t border-base pt-2 mt-1"><span>Total Paid</span><span>₹{snapshot.total}</span></div>
           </div>
         </div>
-        <Link href="/" className="inline-flex items-center gap-2 mt-6 sm:mt-8 bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-full transition-colors">
-          <Home size={18} /> Back to Home
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6 sm:mt-8">
+          <Link href="/" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-full transition-colors">
+            <Home size={18} /> Back to Home
+          </Link>
+          <Link href="/orders" className="inline-flex items-center gap-2 border border-base font-semibold px-6 py-3 rounded-full hover:bg-base-secondary transition-colors">
+            View Order History
+          </Link>
+        </div>
       </div>
     );
   }
@@ -83,10 +146,14 @@ export default function CheckoutPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-32 sm:pb-10">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-6 sm:mb-8">Checkout</h1>
 
+      {placeError && (
+        <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3">
+          {placeError}
+        </div>
+      )}
+
       <form onSubmit={placeOrder} className="grid lg:grid-cols-3 gap-6 sm:gap-8">
-        {/* Delivery + Payment */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Delivery details */}
           <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
             <h2 className="font-bold text-base sm:text-lg mb-4 flex items-center gap-2">
               <MapPin size={18} className="text-primary" /> Delivery Details
@@ -125,7 +192,6 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Payment method */}
           <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
             <h2 className="font-bold text-base sm:text-lg mb-4 flex items-center gap-2">
               <Wallet size={18} className="text-primary" /> Payment Method
@@ -147,7 +213,6 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Order summary — desktop sidebar */}
         <div className="hidden lg:block lg:col-span-1">
           <div className="bg-card border border-base rounded-2xl p-6 sticky top-24">
             <h2 className="font-bold text-lg mb-4">Order Summary</h2>
@@ -166,15 +231,15 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-muted"><span>Taxes</span><span className="text-fg font-medium">₹{taxes}</span></div>
               <div className="border-t border-base pt-3 flex justify-between font-bold text-base"><span>To Pay</span><span>₹{total}</span></div>
             </div>
-            <button type="submit" className="w-full mt-6 bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors">
-              Place Order · ₹{total} <ArrowRight size={18} />
+            <button type="submit" disabled={placing}
+              className="w-full mt-6 bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
+              {placing ? 'Placing…' : `Place Order · ₹${total}`} {!placing && <ArrowRight size={18} />}
             </button>
             <p className="text-xs text-muted text-center mt-3">{itemCount} item{itemCount > 1 ? 's' : ''} · ~25–35 min</p>
           </div>
         </div>
       </form>
 
-      {/* ── Sticky bottom bar on mobile ── */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-base px-4 py-3 shadow-xl">
         <div className="flex items-center justify-between mb-2 text-sm">
           <span className="text-muted text-xs">
@@ -185,10 +250,11 @@ export default function CheckoutPage() {
         </div>
         <button
           type="button"
-          onClick={placeOrder as any}
-          className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-full flex items-center justify-center gap-2 transition-colors text-sm"
+          onClick={(e) => placeOrder(e as any)}
+          disabled={placing}
+          className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-full flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-60"
         >
-          Place Order · ₹{total} <ArrowRight size={16} />
+          {placing ? 'Placing…' : `Place Order · ₹${total}`} {!placing && <ArrowRight size={16} />}
         </button>
       </div>
     </div>
