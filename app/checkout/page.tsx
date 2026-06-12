@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn } from 'lucide-react';
+import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn, Loader2, XCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -20,6 +20,11 @@ export default function CheckoutPage() {
   const [placing, setPlacing]     = useState(false);
   const [placeError, setPlaceError] = useState('');
   const [snapshot, setSnapshot]   = useState({ subtotal: 0, deliveryFee: 0, discount: 0, taxes: 0, total: 0, coupon: '' });
+  const [deliveryEta, setDeliveryEta]           = useState<number | null>(null);
+  const [deliveryCheckRunning, setDeliveryCheckRunning] = useState(false);
+  const [deliveryBlocked, setDeliveryBlocked]   = useState(false);
+  const [deliveryMsg, setDeliveryMsg]           = useState('');
+  const deliveryDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* Pre-fill name from auth user */
   useEffect(() => {
@@ -30,9 +35,39 @@ export default function CheckoutPage() {
     if (!orderPlaced && cart.length === 0) router.replace('/menu');
   }, [cart, orderPlaced]);
 
+  /* ── Auto-run delivery check when address+pincode+city are filled ── */
+  const runDeliveryCheck = useCallback(async (address: string, city: string, pincode: string) => {
+    if (!address.trim() || !city.trim() || !/^\d{6}$/.test(pincode)) return;
+    setDeliveryCheckRunning(true);
+    setDeliveryBlocked(false);
+    setDeliveryMsg('');
+    try {
+      const res = await fetch('/api/delivery/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: `${address}, ${city} ${pincode}` }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDeliveryEta(data.durationMinutes);
+        setDeliveryBlocked(!data.deliverable);
+        setDeliveryMsg(data.message);
+      }
+    } catch { /* non-fatal */ }
+    finally { setDeliveryCheckRunning(false); }
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const updated = { ...form, [e.target.name]: e.target.value };
+    setForm(updated);
     if (errors[e.target.name]) setErrors({ ...errors, [e.target.name]: '' });
+    /* debounce delivery check */
+    if (['address', 'city', 'pincode'].includes(e.target.name)) {
+      if (deliveryDebounce.current) clearTimeout(deliveryDebounce.current);
+      deliveryDebounce.current = setTimeout(() => {
+        runDeliveryCheck(updated.address, updated.city, updated.pincode);
+      }, 800);
+    }
   };
 
   const validate = () => {
@@ -48,7 +83,7 @@ export default function CheckoutPage() {
 
   const placeOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (placing || cart.length === 0 || !validate()) return;
+    if (placing || cart.length === 0 || deliveryBlocked || !validate()) return;
 
     const snap = { subtotal, deliveryFee, discount, taxes, total, coupon };
     const newOrderId = 'FOODY' + Math.floor(100000 + Math.random() * 900000);
@@ -113,7 +148,7 @@ export default function CheckoutPage() {
         </div>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold">Order Placed! 🎉</h1>
         <p className="text-muted mt-3 text-sm">
-          Thank you, {form.name}! Your meal is being prepared and arrives in ~30 minutes.
+          Thank you, {form.name}! Your meal is being prepared and arrives in ~{deliveryEta ?? 30} minutes.
         </p>
         <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6 mt-6 sm:mt-8 text-left space-y-3">
           {[['Order ID', orderId], ['Address', `${form.address}, ${form.city} – ${form.pincode}`], ['Payment', payment === 'cod' ? 'Cash on Delivery' : payment.toUpperCase()]].map(([l, v]) => (
@@ -194,6 +229,26 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* Delivery check result */}
+          {deliveryCheckRunning && (
+            <div className="flex items-center gap-2 text-sm text-muted bg-card border border-base rounded-xl px-4 py-3">
+              <Loader2 size={15} className="animate-spin text-primary" /> Checking delivery availability…
+            </div>
+          )}
+          {!deliveryCheckRunning && deliveryMsg && (
+            <div className={`flex items-start gap-2 text-sm rounded-xl px-4 py-3 border ${
+              deliveryBlocked
+                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400'
+                : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+            }`}>
+              {deliveryBlocked
+                ? <XCircle size={16} className="shrink-0 mt-0.5" />
+                : <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+              }
+              <span>{deliveryMsg}</span>
+            </div>
+          )}
+
           <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
             <h2 className="font-bold text-base sm:text-lg mb-4 flex items-center gap-2">
               <Wallet size={18} className="text-primary" /> Payment Method
@@ -233,11 +288,14 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-muted"><span>Taxes</span><span className="text-fg font-medium">₹{taxes}</span></div>
               <div className="border-t border-base pt-3 flex justify-between font-bold text-base"><span>To Pay</span><span>₹{total}</span></div>
             </div>
-            <button type="submit" disabled={placing}
+            <button type="submit" disabled={placing || deliveryBlocked}
               className="w-full mt-6 bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
               {placing ? 'Placing…' : `Place Order · ₹${total}`} {!placing && <ArrowRight size={18} />}
             </button>
-            <p className="text-xs text-muted text-center mt-3">{itemCount} item{itemCount > 1 ? 's' : ''} · ~25–35 min</p>
+            {deliveryBlocked && <p className="text-xs text-red-500 text-center mt-2">Delivery not available at this address</p>}
+            <p className="text-xs text-muted text-center mt-2">
+              {itemCount} item{itemCount > 1 ? 's' : ''} · ~{deliveryEta ?? '25–35'} min
+            </p>
           </div>
         </div>
       </form>
@@ -245,7 +303,7 @@ export default function CheckoutPage() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-base px-4 py-3 shadow-xl">
         <div className="flex items-center justify-between mb-2 text-sm">
           <span className="text-muted text-xs">
-            {itemCount} item{itemCount > 1 ? 's' : ''} · ~25–35 min
+            {itemCount} item{itemCount > 1 ? 's' : ''} · ~{deliveryEta ?? '25–35'} min
             {discount > 0 && <span className="text-green-600 ml-1">· Saved ₹{discount}</span>}
           </span>
           <span className="font-bold">₹{total}</span>
@@ -253,7 +311,7 @@ export default function CheckoutPage() {
         <button
           type="button"
           onClick={(e) => placeOrder(e as React.FormEvent)}
-          disabled={placing}
+          disabled={placing || deliveryBlocked}
           className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-full flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-60"
         >
           {placing ? 'Placing…' : `Place Order · ₹${total}`} {!placing && <ArrowRight size={16} />}

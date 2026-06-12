@@ -4,16 +4,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, Clock, ShieldCheck, Truck, Star } from 'lucide-react';
+import { Search, Clock, ShieldCheck, Truck, Star, MapPin } from 'lucide-react';
 import FoodCard from '@/components/FoodCard';
 import CategoryScroller from '@/components/CategoryScroller';
 import RestaurantCard from '@/components/RestaurantCard';
+import DeliveryCheckModal from '@/components/DeliveryCheckModal';
 import { foodItems, categories } from '@/data/foods';
 import { restaurants } from '@/data/restaurants';
 
 export default function HomePage() {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
 
   const featured       = foodItems.filter((f) => f.rating >= 4.5).slice(0, 8);
   const topRestaurants = restaurants.filter((r) => r.rating >= 4.3).slice(0, 6);
@@ -58,6 +60,14 @@ export default function HomePage() {
                 Search
               </button>
             </form>
+
+            {/* Delivery check CTA */}
+            <button
+              onClick={() => setDeliveryModalOpen(true)}
+              className="mt-4 inline-flex items-center gap-2 text-sm text-primary font-semibold hover:underline"
+            >
+              <MapPin size={15} /> Check if we deliver to you →
+            </button>
 
             {/* Stats */}
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-x-6 gap-y-4 mt-8">
@@ -155,6 +165,8 @@ export default function HomePage() {
           <Link href="/menu" className="text-primary text-sm font-semibold hover:underline">View full menu →</Link>
         </div>
       </section>
+
+      <DeliveryCheckModal open={deliveryModalOpen} onClose={() => setDeliveryModalOpen(false)} />
 
       {/* ── App Promo ── */}
       <section className="bg-secondary text-white mt-10">
