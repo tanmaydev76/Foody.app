@@ -117,6 +117,9 @@ export default function Header() {
                       <p className="font-semibold text-sm truncate">{user.name}</p>
                       <p className="text-xs text-muted truncate">{user.email}</p>
                     </div>
+                    <Link href="/profile" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-base-secondary transition-colors">
+                      <User size={15} className="text-muted" /> My Profile
+                    </Link>
                     <Link href="/orders" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-base-secondary transition-colors">
                       <ClipboardList size={15} className="text-muted" /> Order History
                     </Link>
@@ -172,6 +175,9 @@ export default function Header() {
                       <p className="text-xs text-muted">{user.email}</p>
                     </div>
                   </div>
+                  <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center gap-2 hover:text-primary transition-colors">
+                    <User size={15} /> My Profile
+                  </Link>
                   <Link href="/orders" onClick={() => setOpen(false)} className="flex items-center gap-2 hover:text-primary transition-colors">
                     <ClipboardList size={15} /> Order History
                   </Link>

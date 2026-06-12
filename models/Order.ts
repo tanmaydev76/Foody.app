@@ -29,8 +29,8 @@ const OrderItemSchema = new Schema<OrderItem>(
   {
     id:       { type: Number, required: true },
     name:     { type: String, required: true },
-    price:    { type: Number, required: true },
-    quantity: { type: Number, required: true },
+    price:    { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 1, max: 20 },
     image:    { type: String, default: '' },
   },
   { _id: false }
@@ -38,14 +38,14 @@ const OrderItemSchema = new Schema<OrderItem>(
 
 const OrderSchema = new Schema<IOrder>(
   {
-    userId:        { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    userId:        { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     items:         { type: [OrderItemSchema], required: true },
-    subtotal:      { type: Number, required: true },
-    discount:      { type: Number, default: 0 },
+    subtotal:      { type: Number, required: true, min: 0 },
+    discount:      { type: Number, default: 0, min: 0 },
     coupon:        { type: String, default: '' },
-    deliveryFee:   { type: Number, required: true },
-    taxes:         { type: Number, required: true },
-    total:         { type: Number, required: true },
+    deliveryFee:   { type: Number, required: true, min: 0 },
+    taxes:         { type: Number, required: true, min: 0 },
+    total:         { type: Number, required: true, min: 0 },
     address:       { type: String, required: true },
     phone:         { type: String, required: true },
     paymentMethod: { type: String, required: true },

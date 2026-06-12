@@ -98,7 +98,9 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const fetchOrders = () => {
+    setLoading(true);
+    setError('');
     fetch('/api/orders')
       .then((r) => r.json())
       .then((data) => {
@@ -107,7 +109,9 @@ export default function OrdersPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { fetchOrders(); }, []);
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
@@ -128,8 +132,11 @@ export default function OrdersPage() {
       )}
 
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3">
-          {error}
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button onClick={fetchOrders} className="shrink-0 bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors">
+            Retry
+          </button>
         </div>
       )}
 

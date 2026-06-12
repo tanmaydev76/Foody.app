@@ -48,7 +48,7 @@ export default function CheckoutPage() {
 
   const placeOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (cart.length === 0 || !validate()) return;
+    if (placing || cart.length === 0 || !validate()) return;
 
     const snap = { subtotal, deliveryFee, discount, taxes, total, coupon };
     const newOrderId = 'FOODY' + Math.floor(100000 + Math.random() * 900000);
@@ -168,18 +168,20 @@ export default function CheckoutPage() {
               <div>
                 <label className="text-xs sm:text-sm font-medium block mb-1.5">Phone</label>
                 <input name="phone" value={form.phone} onChange={handleChange} placeholder="9876543210" maxLength={10}
+                  onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }}
                   className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border bg-base text-sm focus:outline-none focus:ring-2 focus:ring-primary ${errors.phone ? 'border-red-500' : 'border-base'}`} />
                 {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
               </div>
               <div>
                 <label className="text-xs sm:text-sm font-medium block mb-1.5">Pincode</label>
                 <input name="pincode" value={form.pincode} onChange={handleChange} placeholder="400001" maxLength={6}
+                  onKeyPress={(e) => { if (!/[0-9]/.test(e.key)) e.preventDefault(); }}
                   className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border bg-base text-sm focus:outline-none focus:ring-2 focus:ring-primary ${errors.pincode ? 'border-red-500' : 'border-base'}`} />
                 {errors.pincode && <p className="text-xs text-red-500 mt-1">{errors.pincode}</p>}
               </div>
               <div className="sm:col-span-2">
                 <label className="text-xs sm:text-sm font-medium block mb-1.5">Full Address</label>
-                <textarea name="address" value={form.address} onChange={handleChange} placeholder="House no., Street, Landmark" rows={3}
+                <textarea name="address" value={form.address} onChange={handleChange} placeholder="House no., Street, Landmark" rows={3} maxLength={300}
                   className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border bg-base text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none ${errors.address ? 'border-red-500' : 'border-base'}`} />
                 {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
               </div>
@@ -250,7 +252,7 @@ export default function CheckoutPage() {
         </div>
         <button
           type="button"
-          onClick={(e) => placeOrder(e as any)}
+          onClick={(e) => placeOrder(e as React.FormEvent)}
           disabled={placing}
           className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-full flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-60"
         >

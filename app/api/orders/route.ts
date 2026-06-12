@@ -14,6 +14,12 @@ export async function POST(req: NextRequest) {
     if (!items?.length || !orderId || !address || !phone || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required order fields.' }, { status: 400 });
     }
+    if (items.some((i: { quantity: number; price: number }) => i.quantity < 1 || i.price < 0)) {
+      return NextResponse.json({ error: 'Invalid item quantity or price.' }, { status: 400 });
+    }
+    if ([subtotal, deliveryFee, taxes, total].some((n) => typeof n !== 'number' || n < 0)) {
+      return NextResponse.json({ error: 'Invalid order amounts.' }, { status: 400 });
+    }
 
     await connectDB();
     const order = await Order.create({

@@ -125,7 +125,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   if (coupon && COUPONS[coupon]) {
     const c = COUPONS[coupon];
     if (c.type === 'percent') discount = Math.round(subtotal * c.value / 100);
-    else if (c.type === 'flat' && c.description.includes('delivery')) discount = rawDelivery;
+    else if (coupon === 'FREESHIP') discount = rawDelivery;
     else discount = c.value;
     discount = Math.min(discount, subtotal);
   }
