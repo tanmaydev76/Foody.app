@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ClipboardList, Package, ChevronDown, ChevronUp } from 'lucide-react';
+import { ClipboardList, Package, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
 
 interface OrderItem { id: number; name: string; price: number; quantity: number; image: string; }
 interface Order {
@@ -87,6 +87,15 @@ function OrderCard({ order }: { order: Order }) {
             <p><span className="font-medium text-fg">Phone:</span> {order.phone}</p>
             <p><span className="font-medium text-fg">Payment:</span> {order.paymentMethod}</p>
           </div>
+
+          {order.status !== 'delivered' && (
+            <Link
+              href={`/orders/track?orderId=${order.orderId}&lat=19.0176&lng=72.8562&eta=30`}
+              className="flex items-center justify-center gap-2 w-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-2.5 rounded-xl text-sm transition-colors"
+            >
+              <MapPin size={15} /> 🛵 Track Order Live
+            </Link>
+          )}
         </div>
       )}
     </div>

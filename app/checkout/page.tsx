@@ -24,6 +24,7 @@ export default function CheckoutPage() {
   const [deliveryCheckRunning, setDeliveryCheckRunning] = useState(false);
   const [deliveryBlocked, setDeliveryBlocked]   = useState(false);
   const [deliveryMsg, setDeliveryMsg]           = useState('');
+  const [deliveryCoords, setDeliveryCoords]     = useState<{ lat: number; lng: number } | null>(null);
   const deliveryDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* Pre-fill name from auth user */
@@ -52,6 +53,7 @@ export default function CheckoutPage() {
         setDeliveryEta(data.durationMinutes);
         setDeliveryBlocked(!data.deliverable);
         setDeliveryMsg(data.message);
+        if (data.userLat && data.userLng) setDeliveryCoords({ lat: data.userLat, lng: data.userLng });
       }
     } catch { /* non-fatal */ }
     finally { setDeliveryCheckRunning(false); }
@@ -166,11 +168,17 @@ export default function CheckoutPage() {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6 sm:mt-8">
-          <Link href="/" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-full transition-colors">
+          <Link
+            href={`/orders/track?orderId=${orderId}&lat=${deliveryCoords?.lat ?? 19.0176}&lng=${deliveryCoords?.lng ?? 72.8562}&eta=${deliveryEta ?? 30}`}
+            className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white font-semibold px-6 py-3 rounded-full transition-colors"
+          >
+            🛵 Track Order Live
+          </Link>
+          <Link href="/" className="inline-flex items-center gap-2 border border-base font-semibold px-6 py-3 rounded-full hover:bg-base-secondary transition-colors">
             <Home size={18} /> Back to Home
           </Link>
-          <Link href="/orders" className="inline-flex items-center gap-2 border border-base font-semibold px-6 py-3 rounded-full hover:bg-base-secondary transition-colors">
-            View Order History
+          <Link href="/orders" className="inline-flex items-center gap-2 border border-base font-semibold px-6 py-3 rounded-full hover:bg-base-secondary transition-colors text-sm">
+            View History
           </Link>
         </div>
       </div>
