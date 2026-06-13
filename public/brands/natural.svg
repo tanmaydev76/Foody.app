@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#FF6B35" rx="100"/>
+  <!-- Ice cream cone -->
+  <polygon points="100,155 68,88 132,88" fill="#C8A96E"/>
+  <!-- Waffle lines -->
+  <line x1="72" y1="100" x2="128" y2="100" stroke="#A07040" stroke-width="2.5"/>
+  <line x1="68" y1="115" x2="132" y2="115" stroke="#A07040" stroke-width="2.5"/>
+  <line x1="72" y1="130" x2="128" y2="130" stroke="#A07040" stroke-width="2.5"/>
+  <line x1="82" y1="88" x2="76" y2="155" stroke="#A07040" stroke-width="2"/>
+  <line x1="100" y1="88" x2="100" y2="155" stroke="#A07040" stroke-width="2"/>
+  <line x1="118" y1="88" x2="124" y2="155" stroke="#A07040" stroke-width="2"/>
+  <!-- Scoop 1 (bottom) -->
+  <circle cx="100" cy="78" r="28" fill="#F5A623"/>
+  <!-- Scoop 2 (middle) -->
+  <circle cx="100" cy="52" r="22" fill="#E8D5B7"/>
+  <!-- Scoop 3 (top) -->
+  <circle cx="100" cy="32" r="17" fill="#E74C3C"/>
+  <!-- Cherry -->
+  <circle cx="100" cy="16" r="7" fill="#C0392B"/>
+</svg>

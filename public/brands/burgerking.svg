@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#F5C518" rx="100"/>
+  <rect x="34" y="58" width="132" height="22" rx="11" fill="#C8102E"/>
+  <rect x="34" y="89" width="132" height="22" rx="11" fill="#C8102E"/>
+  <rect x="34" y="120" width="132" height="22" rx="11" fill="#C8102E"/>
+  <text x="100" y="170" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="28" fill="#C8102E">BURGER KING</text>
+</svg>

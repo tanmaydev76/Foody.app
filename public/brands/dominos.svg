@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#006491" rx="100"/>
+  <!-- Left half domino tile -->
+  <rect x="30" y="55" width="65" height="90" rx="10" fill="white"/>
+  <!-- Right half domino tile -->
+  <rect x="105" y="55" width="65" height="90" rx="10" fill="#E31837"/>
+  <!-- Divider line -->
+  <line x1="100" y1="60" x2="100" y2="140" stroke="#006491" stroke-width="5"/>
+  <!-- Left dots (1 dot) -->
+  <circle cx="62" cy="100" r="10" fill="#006491"/>
+  <!-- Right dots (2 dots) -->
+  <circle cx="125" cy="80" r="9" fill="white"/>
+  <circle cx="145" cy="120" r="9" fill="white"/>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#8B1A1A" rx="100"/>
+  <!-- Decorative arch (Mughal style) -->
+  <path d="M50,145 L50,90 Q50,45 100,45 Q150,45 150,90 L150,145 Z" fill="none" stroke="#D4A853" stroke-width="5"/>
+  <!-- Inner arch -->
+  <path d="M65,145 L65,96 Q65,62 100,62 Q135,62 135,96 L135,145 Z" fill="none" stroke="#D4A853" stroke-width="3"/>
+  <!-- Biryani pot/handi shape -->
+  <ellipse cx="100" cy="130" rx="32" ry="10" fill="#D4A853"/>
+  <path d="M68,130 Q68,158 100,158 Q132,158 132,130 Z" fill="#D4A853"/>
+  <!-- Steam lines -->
+  <path d="M88,115 Q84,105 88,95" stroke="#D4A853" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M100,112 Q96,102 100,92" stroke="#D4A853" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M112,115 Q108,105 112,95" stroke="#D4A853" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Crown/top decoration -->
+  <polygon points="100,30 106,44 120,40 112,52 120,60 100,54 80,60 88,52 80,40 94,44" fill="#D4A853"/>
+</svg>

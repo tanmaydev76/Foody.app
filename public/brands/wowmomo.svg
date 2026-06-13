@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#E31837" rx="100"/>
+  <!-- Momo dumpling shape -->
+  <ellipse cx="100" cy="108" rx="62" ry="42" fill="white"/>
+  <!-- Momo pleats/fold on top -->
+  <path d="M60,100 Q70,70 100,68 Q130,70 140,100" stroke="white" stroke-width="5" fill="none"/>
+  <path d="M65,96 Q100,58 135,96" stroke="#E31837" stroke-width="3" fill="none"/>
+  <!-- Pleating details -->
+  <path d="M78,80 Q100,62 122,80" stroke="#E31837" stroke-width="2.5" fill="none" stroke-dasharray="5,3"/>
+  <!-- WOW text -->
+  <text x="100" y="120" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="26" fill="#E31837">WOW</text>
+  <text x="100" y="143" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="16" fill="#E31837">MOMO</text>
+</svg>

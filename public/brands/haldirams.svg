@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#FF6B00" rx="100"/>
+  <!-- Decorative border ring -->
+  <circle cx="100" cy="100" r="78" fill="none" stroke="#FFC72C" stroke-width="5" stroke-dasharray="8,4"/>
+  <!-- H letter bold -->
+  <rect x="52" y="50" width="22" height="100" rx="6" fill="white"/>
+  <rect x="126" y="50" width="22" height="100" rx="6" fill="white"/>
+  <rect x="52" y="88" width="96" height="24" rx="6" fill="white"/>
+  <!-- Small decorative dots -->
+  <circle cx="100" cy="168" r="5" fill="#FFC72C"/>
+  <circle cx="84" cy="164" r="4" fill="#FFC72C"/>
+  <circle cx="116" cy="164" r="4" fill="#FFC72C"/>
+</svg>

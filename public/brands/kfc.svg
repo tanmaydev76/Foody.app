@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#C8102E" rx="100"/>
+  <text x="100" y="88" text-anchor="middle" font-family="Arial Black,Arial" font-weight="900" font-size="58" fill="white">KFC</text>
+  <!-- Stripes -->
+  <rect x="34" y="105" width="132" height="12" rx="6" fill="white" opacity="0.9"/>
+  <rect x="44" y="124" width="112" height="10" rx="5" fill="white" opacity="0.7"/>
+  <rect x="56" y="141" width="88" height="9" rx="4" fill="white" opacity="0.5"/>
+</svg>

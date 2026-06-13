@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#EE3124" rx="100"/>
+  <!-- Roof -->
+  <polygon points="100,30 168,90 32,90" fill="white"/>
+  <!-- Roof shadow -->
+  <polygon points="100,30 168,90 32,90" fill="#c0392b" opacity="0.15"/>
+  <!-- Building body -->
+  <rect x="48" y="90" width="104" height="68" rx="4" fill="white"/>
+  <!-- Door -->
+  <rect x="80" y="110" width="40" height="48" rx="4" fill="#EE3124"/>
+  <!-- Windows -->
+  <rect x="56" y="100" width="18" height="18" rx="3" fill="#EE3124"/>
+  <rect x="126" y="100" width="18" height="18" rx="3" fill="#EE3124"/>
+</svg>
