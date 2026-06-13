@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocation } from '@/context/LocationContext';
@@ -8,6 +8,36 @@ import { brandRestaurants } from '@/data/restaurants';
 import { haversineKm } from '@/lib/haversine';
 import { calculateETA } from '@/lib/distance';
 import { RESTAURANT_LOCATION } from '@/lib/constants';
+
+function BrandLogo({ logoUrl, brandColor, brandInitials, name }: {
+  logoUrl?: string; brandColor?: string; brandInitials?: string; name: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (logoUrl && !failed) {
+    return (
+      <div className="w-full h-full rounded-full bg-white flex items-center justify-center p-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logoUrl}
+          alt={name}
+          className="w-full h-full object-contain rounded-full"
+          onError={() => setFailed(true)}
+        />
+      </div>
+    );
+  }
+
+  /* Fallback: colored circle with initials */
+  return (
+    <div
+      className="w-full h-full rounded-full flex items-center justify-center text-white font-extrabold text-base sm:text-xl"
+      style={{ background: brandColor ?? '#FF5A1F' }}
+    >
+      {brandInitials ?? name.charAt(0)}
+    </div>
+  );
+}
 
 export default function TopBrands() {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,7 +73,7 @@ export default function TopBrands() {
         {/* Left scroll button */}
         <button
           onClick={() => scroll('left')}
-          className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-card border border-base rounded-full shadow-md flex items-center justify-center hover:bg-base-secondary transition-colors opacity-0 group-hover/scroll:opacity-100 hidden sm:flex"
+          className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-card border border-base rounded-full shadow-md items-center justify-center hover:bg-base-secondary transition-all opacity-0 group-hover/scroll:opacity-100 hidden sm:flex"
           aria-label="Scroll left"
         >
           <ChevronLeft size={16} />
@@ -60,17 +90,23 @@ export default function TopBrands() {
               href={`/restaurants/${r.id}`}
               className="flex flex-col items-center gap-2.5 shrink-0 snap-start group"
             >
-              {/* Logo circle */}
+              {/* Logo circle — white bg for real logo, colored bg as fallback */}
               <div
-                className="w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] rounded-full border-2 border-white/20 flex items-center justify-center text-white font-extrabold text-base sm:text-xl shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-200"
-                style={{ background: r.brandColor ?? '#FF5A1F' }}
+                className="w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] rounded-full border-2 border-base shadow-md group-hover:scale-110 group-hover:shadow-xl transition-all duration-200 overflow-hidden bg-white"
               >
-                {r.brandInitials ?? r.name.charAt(0)}
+                <BrandLogo
+                  logoUrl={r.logoUrl}
+                  brandColor={r.brandColor}
+                  brandInitials={r.brandInitials}
+                  name={r.name}
+                />
               </div>
+
               {/* Name */}
               <p className="text-[11px] sm:text-xs font-semibold text-center leading-tight max-w-[72px] sm:max-w-[88px] truncate group-hover:text-primary transition-colors">
                 {r.name}
               </p>
+
               {/* ETA pill */}
               <span className="text-[10px] sm:text-[11px] text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded-full">
                 {r.eta} min
@@ -82,7 +118,7 @@ export default function TopBrands() {
         {/* Right scroll button */}
         <button
           onClick={() => scroll('right')}
-          className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-card border border-base rounded-full shadow-md flex items-center justify-center hover:bg-base-secondary transition-colors opacity-0 group-hover/scroll:opacity-100 hidden sm:flex"
+          className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-card border border-base rounded-full shadow-md items-center justify-center hover:bg-base-secondary transition-all opacity-0 group-hover/scroll:opacity-100 hidden sm:flex"
           aria-label="Scroll right"
         >
           <ChevronRight size={16} />

@@ -6,11 +6,31 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Star, Clock, MapPin, ArrowLeft, ChevronRight } from 'lucide-react';
 import FoodCard from '@/components/FoodCard';
-import { allRestaurants } from '@/data/restaurants';
+import { allRestaurants, type Restaurant } from '@/data/restaurants';
 import { haversineKm } from '@/lib/haversine';
 import { calculateETA } from '@/lib/distance';
 import { useLocation } from '@/context/LocationContext';
 import { RESTAURANT_LOCATION } from '@/lib/constants';
+
+function BrandLogoBox({ restaurant }: { restaurant: Restaurant }) {
+  const [failed, setFailed] = useState(false);
+  if (restaurant.logoUrl && !failed) {
+    return (
+      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-base bg-white shrink-0 shadow-md -mt-8 sm:-mt-10 z-10 overflow-hidden p-1.5 flex items-center justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={restaurant.logoUrl} alt={restaurant.name} className="w-full h-full object-contain" onError={() => setFailed(true)} />
+      </div>
+    );
+  }
+  return (
+    <div
+      className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-base flex items-center justify-center text-white font-extrabold text-lg sm:text-xl shrink-0 shadow-md -mt-8 sm:-mt-10 z-10"
+      style={{ background: restaurant.brandColor }}
+    >
+      {restaurant.brandInitials ?? restaurant.name.charAt(0)}
+    </div>
+  );
+}
 
 export default function RestaurantPage() {
   const params  = useParams();
@@ -105,12 +125,7 @@ export default function RestaurantPage() {
         <div className="p-4 sm:p-6 flex items-start gap-4">
           {/* Brand logo circle */}
           {restaurant.brandColor && (
-            <div
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border-2 border-base flex items-center justify-center text-white font-extrabold text-lg sm:text-xl shrink-0 shadow-md -mt-8 sm:-mt-10 z-10"
-              style={{ background: restaurant.brandColor }}
-            >
-              {restaurant.brandInitials ?? restaurant.name.charAt(0)}
-            </div>
+            <BrandLogoBox restaurant={restaurant} />
           )}
           <div className="flex-1 min-w-0">
             <h1 className="text-xl sm:text-2xl font-extrabold">{restaurant.name}</h1>
