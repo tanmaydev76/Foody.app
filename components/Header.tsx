@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { ShoppingCart, Menu, X, MapPin, User, ChevronDown, LogOut, ClipboardList } from 'lucide-react';
+import { ShoppingCart, Menu, X, MapPin, User, ChevronDown, LogOut, ClipboardList, Bike } from 'lucide-react';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
 import { useCart } from '@/context/CartContext';
@@ -139,6 +139,9 @@ export default function Header() {
                     <Link href="/orders" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-base-secondary transition-colors">
                       <ClipboardList size={15} className="text-muted" /> Order History
                     </Link>
+                    <Link href="/orders" className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-base-secondary transition-colors">
+                      <Bike size={15} className="text-muted" /> Track Order
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-base-secondary transition-colors text-red-500"
@@ -196,6 +199,9 @@ export default function Header() {
                   </Link>
                   <Link href="/orders" onClick={() => setOpen(false)} className="flex items-center gap-2 hover:text-primary transition-colors">
                     <ClipboardList size={15} /> Order History
+                  </Link>
+                  <Link href="/orders" onClick={() => setOpen(false)} className="flex items-center gap-2 hover:text-primary transition-colors">
+                    <Bike size={15} /> Track Order
                   </Link>
                   <button onClick={handleLogout} className="flex items-center gap-2 text-red-500 hover:text-red-600 transition-colors">
                     <LogOut size={15} /> Logout

@@ -19,13 +19,12 @@ const STATUSES = [
   { key: 'delivered',        icon: Package,      label: 'Delivered',         sub: 'Enjoy your meal! 🎉',              color: 'text-green-500',  bg: 'bg-green-500' },
 ];
 
-/* Time each status takes (ms) — simulated progression */
+/* Time each status takes (ms) — simulated progression.
+   out_for_delivery is NOT here; it advances when riderProgress reaches 1. */
 const STATUS_DURATIONS: Record<string, number> = {
-  placed:           8000,
-  confirmed:        15000,
-  preparing:        25000,
-  out_for_delivery: 35000,
-  delivered:        0,
+  placed:    8000,
+  confirmed: 15000,
+  preparing: 25000,
 };
 
 function useCountdown(targetMs: number) {
@@ -58,30 +57,35 @@ export default function TrackOrderPage() {
   const isDelivered = statusIdx === STATUSES.length - 1;
   const countdown = useCountdown(etaMins * 60 * 1000);
 
-  /* Auto-advance statuses */
+  /* Auto-advance: placed → confirmed → preparing → out_for_delivery via timers.
+     Delivered is triggered only when the rider animation finishes (riderProgress = 1). */
   useEffect(() => {
     let idx = 0;
     const advance = () => {
       idx++;
-      if (idx < STATUSES.length) {
-        setStatusIdx(idx);
-        if (idx < STATUSES.length - 1) {
-          setTimeout(advance, STATUS_DURATIONS[STATUSES[idx].key]);
-        }
+      setStatusIdx(idx);
+      const nextKey = STATUSES[idx].key;
+      if (STATUS_DURATIONS[nextKey]) {
+        setTimeout(advance, STATUS_DURATIONS[nextKey]);
       }
+      // out_for_delivery has no entry in STATUS_DURATIONS — rider animation drives the next step
     };
     const t = setTimeout(advance, STATUS_DURATIONS[STATUSES[0].key]);
     return () => clearTimeout(t);
   }, []);
 
-  /* Animate rider when out for delivery */
+  /* Animate rider when out for delivery; advance to Delivered when rider arrives */
   useEffect(() => {
     if (STATUSES[statusIdx].key === 'out_for_delivery') {
       progressRef.current = 0;
       animRef.current = setInterval(() => {
         progressRef.current = Math.min(1, progressRef.current + 0.004);
         setRiderProgress(progressRef.current);
-        if (progressRef.current >= 1 && animRef.current) clearInterval(animRef.current);
+        if (progressRef.current >= 1 && animRef.current) {
+          clearInterval(animRef.current);
+          // Rider has arrived — mark as delivered
+          setStatusIdx(STATUSES.length - 1);
+        }
       }, 300);
     }
     return () => { if (animRef.current) clearInterval(animRef.current); };
