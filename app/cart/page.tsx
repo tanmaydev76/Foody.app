@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Minus, Trash2, ShoppingBag, ArrowRight, Tag, X, CheckCircle2 } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingBag, ArrowRight, Tag, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useCart, COUPONS } from '@/context/CartContext';
 
 export default function CartPage() {
@@ -30,42 +30,76 @@ export default function CartPage() {
     );
   }
 
+  /* Group items by restaurantName (default: "Foody Kitchen") */
+  const groups = cart.reduce<Record<string, typeof cart>>((acc, item) => {
+    const key = item.restaurantName ?? 'Foody Kitchen';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(item);
+    return acc;
+  }, {});
+  const restaurantNames = Object.keys(groups);
+  const multiRestaurant = restaurantNames.length > 1;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-32 sm:pb-10">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-1 sm:mb-2">Your Cart</h1>
       <p className="text-muted text-xs sm:text-sm mb-5 sm:mb-8">{itemCount} item{itemCount > 1 ? 's' : ''} in your cart</p>
 
+      {/* Multi-restaurant notice */}
+      {multiRestaurant && (
+        <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 mb-5 text-sm">
+          <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-amber-700 dark:text-amber-400">
+            <span className="font-semibold">Items from {restaurantNames.length} restaurants.</span>{' '}
+            Combining items from multiple restaurants may affect delivery time.
+          </p>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
         {/* Items + coupon */}
-        <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-          {cart.map((item) => (
-            <div key={item.id} className="bg-card border border-base rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
-              <div className="relative w-16 h-16 sm:w-24 sm:h-24 rounded-lg sm:rounded-xl overflow-hidden shrink-0 bg-base-secondary">
-                <Image src={item.image} alt={item.name} fill unoptimized className="object-cover" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-xs sm:text-sm md:text-base truncate">{item.name}</h3>
-                <p className="text-[10px] sm:text-xs text-muted mt-0.5">{item.category}</p>
-                <p className="font-bold text-sm sm:text-base mt-1 sm:mt-2">
-                  ₹{item.price}
-                  <span className="text-[10px] sm:text-xs text-muted font-normal ml-1">
-                    ×{item.quantity} = <span className="text-fg font-semibold">₹{item.price * item.quantity}</span>
-                  </span>
-                </p>
-              </div>
-              <div className="flex flex-col items-end gap-2 sm:gap-3">
-                <button onClick={() => removeFromCart(item.id)} className="text-muted hover:text-red-500 transition-colors" aria-label="Remove">
-                  <Trash2 size={16} />
-                </button>
-                <div className="flex items-center gap-2 sm:gap-3 bg-primary/10 rounded-full px-1.5 sm:px-2 py-1 sm:py-1.5">
-                  <button onClick={() => decreaseQty(item.id)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary text-white flex items-center justify-center">
-                    <Minus size={11} />
-                  </button>
-                  <span className="text-xs sm:text-sm font-semibold w-3 sm:w-4 text-center">{item.quantity}</span>
-                  <button onClick={() => increaseQty(item.id)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-40" disabled={item.quantity >= 20}>
-                    <Plus size={11} />
-                  </button>
+        <div className="lg:col-span-2 space-y-5">
+          {restaurantNames.map((restName) => (
+            <div key={restName}>
+              {/* Restaurant group header */}
+              {multiRestaurant && (
+                <div className="flex items-center gap-2 mb-2 px-1">
+                  <span className="text-xs font-bold text-muted uppercase tracking-wide">From</span>
+                  <span className="text-sm font-bold text-primary">{restName}</span>
                 </div>
+              )}
+              <div className="space-y-3 sm:space-y-4">
+                {groups[restName].map((item) => (
+                  <div key={item.id} className="bg-card border border-base rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+                    <div className="relative w-16 h-16 sm:w-24 sm:h-24 rounded-lg sm:rounded-xl overflow-hidden shrink-0 bg-base-secondary">
+                      <Image src={item.image} alt={item.name} fill unoptimized className="object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-xs sm:text-sm md:text-base truncate">{item.name}</h3>
+                      <p className="text-[10px] sm:text-xs text-muted mt-0.5">{item.category}</p>
+                      <p className="font-bold text-sm sm:text-base mt-1 sm:mt-2">
+                        ₹{item.price}
+                        <span className="text-[10px] sm:text-xs text-muted font-normal ml-1">
+                          ×{item.quantity} = <span className="text-fg font-semibold">₹{item.price * item.quantity}</span>
+                        </span>
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2 sm:gap-3">
+                      <button onClick={() => removeFromCart(item.id)} className="text-muted hover:text-red-500 transition-colors" aria-label="Remove">
+                        <Trash2 size={16} />
+                      </button>
+                      <div className="flex items-center gap-2 sm:gap-3 bg-primary/10 rounded-full px-1.5 sm:px-2 py-1 sm:py-1.5">
+                        <button onClick={() => decreaseQty(item.id)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary text-white flex items-center justify-center">
+                          <Minus size={11} />
+                        </button>
+                        <span className="text-xs sm:text-sm font-semibold w-3 sm:w-4 text-center">{item.quantity}</span>
+                        <button onClick={() => increaseQty(item.id)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-40" disabled={item.quantity >= 20}>
+                          <Plus size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
@@ -133,7 +167,7 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* ── Sticky bottom bar on mobile ── */}
+      {/* Sticky bottom bar on mobile */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-base px-4 py-3 shadow-xl">
         <div className="flex items-center justify-between mb-2 text-sm">
           <span className="text-muted">

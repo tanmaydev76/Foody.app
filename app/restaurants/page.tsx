@@ -4,43 +4,61 @@ import { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal, X, LayoutGrid, Map } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import RestaurantCard from '@/components/RestaurantCard';
-import { restaurants } from '@/data/restaurants';
+import { allRestaurants } from '@/data/restaurants';
 import type { Restaurant } from '@/data/restaurants';
+import { haversineKm } from '@/lib/haversine';
+import { calculateETA } from '@/lib/distance';
+import { useLocation } from '@/context/LocationContext';
+import { RESTAURANT_LOCATION } from '@/lib/constants';
 
 const RestaurantsMap = dynamic(() => import('@/components/RestaurantsMap'), { ssr: false });
 
-const cuisineFilters = ['All', 'Pizza', 'Burgers', 'Biryani', 'Chinese', 'South Indian', 'North Indian', 'Snacks', 'Desserts', 'Beverages'];
+const cuisineFilters = ['All', 'Pizza', 'Burgers', 'Biryani', 'Chinese', 'South Indian', 'North Indian', 'Snacks', 'Desserts', 'Beverages', 'Momos', 'Coffee', 'Ice Cream'];
 
 const sortOptions = [
-  { label: 'Relevance',   value: 'default' },
-  { label: 'Top Rated',   value: 'rating' },
-  { label: 'Fastest',     value: 'time' },
-  { label: 'Price: Low',  value: 'price_asc' },
-  { label: 'Price: High', value: 'price_desc' },
+  { label: 'Fastest (ETA)',  value: 'eta' },
+  { label: 'Relevance',     value: 'default' },
+  { label: 'Top Rated',     value: 'rating' },
+  { label: 'Price: Low',    value: 'price_asc' },
+  { label: 'Price: High',   value: 'price_desc' },
 ];
 
 export default function RestaurantsPage() {
-  const [search, setSearch]       = useState('');
-  const [cuisine, setCuisine]     = useState('All');
-  const [sort, setSort]           = useState('default');
+  const [search,    setSearch]    = useState('');
+  const [cuisine,   setCuisine]   = useState('All');
+  const [sort,      setSort]      = useState('eta');
   const [promoOnly, setPromoOnly] = useState(false);
-  const [view, setView]           = useState<'grid' | 'map'>('grid');
+  const [view,      setView]      = useState<'grid' | 'map'>('grid');
   const [mapSelected, setMapSelected] = useState<Restaurant | null>(null);
 
+  const { location } = useLocation();
+  const userLat = location?.lat ?? RESTAURANT_LOCATION.lat;
+  const userLng = location?.lng ?? RESTAURANT_LOCATION.lng;
+
+  const enriched = useMemo(() =>
+    allRestaurants.map((r) => {
+      const dist = haversineKm(userLat, userLng, r.lat, r.lng);
+      return { ...r, distKm: Math.round(dist * 10) / 10, eta: calculateETA(dist) };
+    }),
+    [userLat, userLng]
+  );
+
   const filtered = useMemo(() => {
-    let list = [...restaurants];
+    let list = [...enriched];
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((r) => r.name.toLowerCase().includes(q) || r.cuisines.some((c) => c.toLowerCase().includes(q)));
+      list = list.filter((r) =>
+        r.name.toLowerCase().includes(q) || r.cuisines.some((c) => c.toLowerCase().includes(q))
+      );
     }
-    if (cuisine !== 'All') list = list.filter((r) => r.cuisines.includes(cuisine));
-    if (promoOnly)         list = list.filter((r) => r.promoted);
-    if (sort === 'rating')          list.sort((a, b) => b.rating - a.rating);
-    else if (sort === 'time')       list.sort((a, b) => a.deliveryTime - b.deliveryTime);
-    else if (sort === 'price_asc')  list.sort((a, b) => a.priceForOne - b.priceForOne);
-    else if (sort === 'price_desc') list.sort((a, b) => b.priceForOne - a.priceForOne);
+    if (cuisine !== 'All') list = list.filter((r) => r.cuisines.some((c) => c.toLowerCase().includes(cuisine.toLowerCase())));
+    if (promoOnly) list = list.filter((r) => r.promoted);
+    if (sort === 'eta')             list.sort((a, b) => a.eta - b.eta);
+    else if (sort === 'rating')     list.sort((a, b) => b.rating - a.rating);
+    else if (sort === 'price_asc')  list.sort((a, b) => (a.costForTwo ?? a.priceForOne * 2) - (b.costForTwo ?? b.priceForOne * 2));
+    else if (sort === 'price_desc') list.sort((a, b) => (b.costForTwo ?? b.priceForOne * 2) - (a.costForTwo ?? a.priceForOne * 2));
     return list;
-  }, [search, cuisine, sort, promoOnly]);
+  }, [enriched, search, cuisine, sort, promoOnly]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
@@ -50,7 +68,6 @@ export default function RestaurantsPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold">Restaurants Near You</h1>
           <p className="text-muted text-sm mt-1">{filtered.length} restaurants in Mumbai</p>
         </div>
-        {/* Grid / Map toggle */}
         <div className="flex items-center bg-base-secondary border border-base rounded-xl p-1 gap-1">
           <button
             onClick={() => setView('grid')}
@@ -79,7 +96,7 @@ export default function RestaurantsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search restaurants…"
+            placeholder="Search restaurants or cuisines…"
             className="w-full pl-9 sm:pl-11 pr-8 py-2.5 sm:py-3 rounded-xl border border-base bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
           {search && (
@@ -127,11 +144,18 @@ export default function RestaurantsPage() {
       {view === 'map' && (
         <div className="space-y-4">
           <RestaurantsMap restaurants={filtered} onSelect={setMapSelected} />
-
-          {/* Selected restaurant card */}
           {mapSelected && (
             <div className="bg-card border border-primary/40 rounded-2xl p-4 flex items-center gap-4 shadow-lg">
-              <img src={mapSelected.image} alt={mapSelected.name} className="w-20 h-16 rounded-xl object-cover shrink-0" />
+              {mapSelected.brandColor ? (
+                <div
+                  className="w-16 h-16 rounded-xl shrink-0 flex items-center justify-center text-white font-extrabold text-xl"
+                  style={{ background: mapSelected.brandColor }}
+                >
+                  {mapSelected.brandInitials ?? mapSelected.name.charAt(0)}
+                </div>
+              ) : (
+                <img src={mapSelected.image} alt={mapSelected.name} className="w-20 h-16 rounded-xl object-cover shrink-0" />
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="font-bold text-base">{mapSelected.name}</h3>
@@ -140,15 +164,11 @@ export default function RestaurantsPage() {
                 <p className="text-xs text-muted mt-0.5">{mapSelected.area} · {mapSelected.cuisines.join(', ')}</p>
                 <div className="flex items-center gap-3 mt-1 text-xs">
                   <span>⭐ {mapSelected.rating}</span>
-                  <span>🕐 {mapSelected.deliveryTime} min</span>
-                  <span>₹{mapSelected.priceForOne} for one</span>
+                  <span>₹{mapSelected.costForTwo ?? mapSelected.priceForOne * 2} for two</span>
                   {mapSelected.offer && <span className="text-green-600 font-semibold">{mapSelected.offer}</span>}
                 </div>
               </div>
-              <button
-                onClick={() => setMapSelected(null)}
-                className="text-muted hover:text-fg shrink-0"
-              >
+              <button onClick={() => setMapSelected(null)} className="text-muted hover:text-fg shrink-0">
                 <X size={16} />
               </button>
             </div>
@@ -160,7 +180,9 @@ export default function RestaurantsPage() {
       {view === 'grid' && (
         filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filtered.map((r) => <RestaurantCard key={r.id} r={r} />)}
+            {filtered.map((r) => (
+              <RestaurantCard key={r.id} r={r} distKm={r.distKm} eta={r.eta} />
+            ))}
           </div>
         ) : (
           <div className="text-center py-20 text-muted">

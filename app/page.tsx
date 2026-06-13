@@ -8,6 +8,7 @@ import { Search, Clock, ShieldCheck, Truck, Star, MapPin } from 'lucide-react';
 import FoodCard from '@/components/FoodCard';
 import CategoryScroller from '@/components/CategoryScroller';
 import RestaurantCard from '@/components/RestaurantCard';
+import TopBrands from '@/components/TopBrands';
 import DeliveryCheckModal from '@/components/DeliveryCheckModal';
 import { foodItems, categories } from '@/data/foods';
 import { restaurants } from '@/data/restaurants';
@@ -123,6 +124,9 @@ export default function HomePage() {
         </div>
         <CategoryScroller categories={categories} />
       </section>
+
+      {/* ── Top Brands ── */}
+      <TopBrands />
 
       {/* ── Popular Restaurants ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">

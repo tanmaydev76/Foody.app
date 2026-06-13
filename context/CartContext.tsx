@@ -11,6 +11,8 @@ export interface FoodItem {
   image: string;
   rating: number;
   veg: boolean;
+  restaurantId?: number;
+  restaurantName?: string;
 }
 
 export interface CartItem extends FoodItem {
