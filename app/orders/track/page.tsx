@@ -43,10 +43,17 @@ export default function TrackOrderPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const orderId  = searchParams.get('orderId') ?? '';
-  const addrLat  = parseFloat(searchParams.get('lat')  ?? '19.0176');
-  const addrLng  = parseFloat(searchParams.get('lng')  ?? '72.8562');
-  const etaMins  = parseInt(searchParams.get('eta')    ?? '30');
+  const orderId       = searchParams.get('orderId') ?? '';
+  const addrLat       = parseFloat(searchParams.get('lat')  ?? '19.0176');
+  const addrLng       = parseFloat(searchParams.get('lng')  ?? '72.8562');
+  const etaMins       = parseInt(searchParams.get('eta')    ?? '30');
+  const placedAt      = parseInt(searchParams.get('t')      ?? '0');
+
+  /* Tracking expires when ETA elapses OR after 2-hour hard cutoff */
+  const trackingExpired = placedAt > 0 && (
+    Date.now() - placedAt > etaMins * 60 * 1000 ||
+    Date.now() - placedAt > 2 * 60 * 60 * 1000
+  );
 
   const [statusIdx, setStatusIdx] = useState(0);
   const [riderProgress, setRiderProgress] = useState(0);
@@ -92,6 +99,34 @@ export default function TrackOrderPage() {
   }, [statusIdx]);
 
   const distKm = Math.round(haversineKm(RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng, addrLat, addrLng) * 10) / 10;
+
+  /* ── Tracking window closed ── */
+  if (trackingExpired) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 pb-16">
+        <Link href="/orders" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-primary transition-colors mb-6">
+          <ArrowLeft size={15} /> Order History
+        </Link>
+        <div className="bg-card border border-base rounded-2xl p-10 flex flex-col items-center text-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <Package size={28} className="text-green-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold mb-1">Order Delivered</h2>
+            <p className="text-muted text-sm">This order has already been delivered. Live tracking is no longer available.</p>
+          </div>
+          <div className="flex gap-3 mt-2">
+            <Link href="/" className="bg-primary text-white font-semibold px-6 py-3 rounded-full hover:bg-primary-dark transition-colors text-sm">
+              Order Again
+            </Link>
+            <Link href="/orders" className="border border-base font-semibold px-6 py-3 rounded-full hover:bg-base-secondary transition-colors text-sm">
+              View History
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 pb-16">

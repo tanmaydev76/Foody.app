@@ -35,6 +35,16 @@ const STATUS_LABEL: Record<string, string> = {
   out_for_delivery: 'Out for Delivery', delivered: 'Delivered',
 };
 
+const DEFAULT_ETA_MINS = 45; // assumed if not stored
+
+function isTrackable(order: Order): boolean {
+  if (order.status === 'delivered') return false;
+  const ageMs = Date.now() - new Date(order.createdAt).getTime();
+  if (ageMs > 2 * 60 * 60 * 1000) return false;         // hard 2-hour cutoff
+  if (ageMs > DEFAULT_ETA_MINS * 60 * 1000) return false; // ETA elapsed
+  return true;
+}
+
 function OrderCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(false);
   const date = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -88,9 +98,9 @@ function OrderCard({ order }: { order: Order }) {
             <p><span className="font-medium text-fg">Payment:</span> {order.paymentMethod}</p>
           </div>
 
-          {order.status !== 'delivered' && (
+          {isTrackable(order) && (
             <Link
-              href={`/orders/track?orderId=${order.orderId}&lat=19.0176&lng=72.8562&eta=30`}
+              href={`/orders/track?orderId=${order.orderId}&lat=19.0176&lng=72.8562&eta=30&t=${new Date(order.createdAt).getTime()}`}
               className="flex items-center justify-center gap-2 w-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-2.5 rounded-xl text-sm transition-colors"
             >
               <MapPin size={15} /> 🛵 Track Order Live
