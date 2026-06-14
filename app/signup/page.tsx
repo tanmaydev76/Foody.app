@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, CheckCircle2, XCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { getPasswordChecks, passwordStrengthScore } from '@/lib/passwordRules';
 
 export default function SignupPage() {
   const { signup, user } = useAuth();
@@ -21,10 +22,16 @@ export default function SignupPage() {
 
   useEffect(() => { if (user) router.replace(redirect); }, [user, redirect, router]);
 
+  const checks = getPasswordChecks(password);
+  const score = passwordStrengthScore(password);
+  const showStrength = password.length > 0;
+
+  const strengthColor = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-400', 'bg-green-600'][score] ?? 'bg-green-600';
+  const strengthLabel = ['Weak', 'Weak', 'Fair', 'Good', 'Strong'][score] ?? 'Strong';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (password.length < 6) { setError('Password must be at least 6 characters.'); return; }
     setLoading(true);
     try {
       await signup(name.trim(), email.trim(), password);
@@ -80,7 +87,7 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">Password <span className="text-muted font-normal">(min. 6 chars)</span></label>
+              <label className="block text-sm font-medium mb-1.5">Password</label>
               <div className="relative">
                 <input
                   type={showPw ? 'text' : 'password'}
@@ -98,6 +105,38 @@ export default function SignupPage() {
                   {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              {showStrength && (
+                <div className="mt-3 space-y-2">
+                  {/* Strength bar */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-base-secondary rounded-full overflow-hidden flex gap-0.5">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`flex-1 rounded-full transition-all duration-300 ${i < score ? strengthColor : 'bg-border'}`}
+                        />
+                      ))}
+                    </div>
+                    <span className={`text-xs font-medium ${score >= 4 ? 'text-green-600' : score === 3 ? 'text-green-500' : score === 2 ? 'text-yellow-600' : 'text-red-500'}`}>
+                      {strengthLabel}
+                    </span>
+                  </div>
+
+                  {/* Checklist */}
+                  <ul className="space-y-1">
+                    {checks.map((c) => (
+                      <li key={c.label} className="flex items-center gap-2 text-xs">
+                        {c.pass
+                          ? <CheckCircle2 size={13} className="text-green-500 shrink-0" />
+                          : <XCircle size={13} className="text-red-400 shrink-0" />
+                        }
+                        <span className={c.pass ? 'text-green-600 dark:text-green-400' : 'text-muted'}>{c.label}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <button

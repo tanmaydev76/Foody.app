@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { connectDB } from '@/lib/mongodb';
 import User from '@/models/User';
 import { signToken } from '@/lib/auth';
+import { isPasswordStrong } from '@/lib/passwordRules';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,8 +15,10 @@ export async function POST(req: NextRequest) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: 'Invalid email address.' }, { status: 400 });
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 });
+    if (!isPasswordStrong(password)) {
+      return NextResponse.json({
+        error: 'Password must be at least 8 characters and include an uppercase letter, a number, and a special character.',
+      }, { status: 400 });
     }
 
     await connectDB();
