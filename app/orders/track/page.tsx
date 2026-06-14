@@ -175,14 +175,18 @@ export default function TrackOrderPage() {
           )}
         </div>
 
-        {/* Status timeline */}
+        {/* Status timeline — only show delivered step once order is done */}
         <div className="bg-card border border-base rounded-2xl p-5 mb-6">
           <h2 className="font-bold text-sm mb-4">Order Status</h2>
           <div className="space-y-0">
-            {STATUSES.map((s, i) => {
-              const done    = trackingExpired ? true : i < statusIdx;
-              const active  = !trackingExpired && i === statusIdx;
-              const pending = !trackingExpired && i > statusIdx;
+            {(isDelivered || trackingExpired
+              ? STATUSES.filter((s) => s.key === 'delivered')
+              : STATUSES
+            ).map((s, i, arr) => {
+              const globalIdx = STATUSES.findIndex((x) => x.key === s.key);
+              const done    = trackingExpired ? true : globalIdx < statusIdx;
+              const active  = !trackingExpired && globalIdx === statusIdx;
+              const pending = !trackingExpired && globalIdx > statusIdx;
               return (
                 <div key={s.key} className="flex items-start gap-3">
                   <div className="flex flex-col items-center">
@@ -193,7 +197,7 @@ export default function TrackOrderPage() {
                     }`}>
                       <s.icon size={15} className={done || active ? 'text-white' : 'text-muted'} />
                     </div>
-                    {i < STATUSES.length - 1 && (
+                    {i < arr.length - 1 && (
                       <div className={`w-0.5 h-8 mt-1 rounded transition-all duration-700 ${done ? s.bg : 'bg-base'}`} />
                     )}
                   </div>
