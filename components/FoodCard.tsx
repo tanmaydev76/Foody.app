@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Star, Plus, Minus } from 'lucide-react';
 import { FoodItem, useCart } from '@/context/CartContext';
 
-export default function FoodCard({ item }: { item: FoodItem }) {
+export default function FoodCard({ item, isBestseller }: { item: FoodItem; isBestseller?: boolean }) {
   const { cart, addToCart, increaseQty, decreaseQty } = useCart();
   const cartItem = cart.find((c) => c.id === item.id);
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -28,6 +28,11 @@ export default function FoodCard({ item }: { item: FoodItem }) {
         <span className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 bg-base/90 backdrop-blur px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-semibold flex items-center gap-0.5 text-yellow-500">
           <Star size={10} fill="currentColor" /> {item.rating}
         </span>
+        {isBestseller && (
+          <span className="absolute bottom-1.5 left-1.5 sm:bottom-2 sm:left-2 bg-orange-500 text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+            🔥 Bestseller
+          </span>
+        )}
         {/* Veg/Non-veg dot */}
         <span className={`absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-4 h-4 sm:w-5 sm:h-5 rounded-sm border-2 flex items-center justify-center bg-base ${item.veg ? 'border-green-600' : 'border-red-600'}`}>
           <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${item.veg ? 'bg-green-600' : 'bg-red-600'}`} />

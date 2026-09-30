@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { items, subtotal, discount, coupon, deliveryFee, taxes, total, address, phone, paymentMethod, orderId } = body;
+    const { items, subtotal, discount, coupon, deliveryFee, taxes, total, address, phone, paymentMethod, orderId, deliveryInstructions, tip } = body;
 
     if (!items?.length || !orderId || !address || !phone || !paymentMethod) {
       return NextResponse.json({ error: 'Missing required order fields.' }, { status: 400 });
@@ -26,6 +26,8 @@ export async function POST(req: NextRequest) {
       userId: user.userId,
       items, subtotal, discount: discount ?? 0, coupon: coupon ?? '',
       deliveryFee, taxes, total, address, phone, paymentMethod, orderId,
+      deliveryInstructions: deliveryInstructions ?? '',
+      tip: tip ?? 0,
     });
 
     return NextResponse.json({ order }, { status: 201 });

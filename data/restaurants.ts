@@ -23,6 +23,10 @@ export interface Restaurant {
   logoUrl?: string;
   /** Per-restaurant menu; present only for brand restaurants */
   menu?: BrandMenuItem[];
+  /** Item IDs that are marked as bestsellers in this restaurant's menu */
+  bestsellerIds?: number[];
+  /** Operating hours; defaults to 10:00–23:00 when omitted */
+  openHours?: { open: string; close: string };
 }
 
 export interface BrandMenuItem extends FoodItem {
@@ -316,6 +320,8 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.4, priceForOne: 200, costForTwo: 400, deliveryTime: 25,
     promoted: true, offer: 'McSaver Meals from ₹49', category: 'Burgers',
     lat: 19.1136, lng: 72.8697, area: 'Andheri West',
+    openHours: { open: '08:00', close: '01:00' },
+    bestsellerIds: [1004, 1003, 1008],
     menu: mcMenu,
   },
   {
@@ -327,6 +333,8 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.3, priceForOne: 220, costForTwo: 440, deliveryTime: 25,
     promoted: false, offer: '₹79 Burgers', category: 'Burgers',
     lat: 19.0596, lng: 72.8295, area: 'Bandra West',
+    openHours: { open: '09:00', close: '01:00' },
+    bestsellerIds: [1023, 1022, 1027],
     menu: bkMenu,
   },
   {
@@ -338,6 +346,7 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.5, priceForOne: 350, costForTwo: 700, deliveryTime: 30,
     promoted: true, offer: '2 Pizzas @ ₹99 each', category: 'Pizza',
     lat: 19.0178, lng: 72.8428, area: 'Dadar West',
+    bestsellerIds: [1043, 1049, 1047],
     menu: dominosMenu,
   },
   {
@@ -349,6 +358,8 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.4, priceForOne: 300, costForTwo: 600, deliveryTime: 30,
     promoted: false, offer: 'Bucket for 2 @ ₹499', category: 'Burgers',
     lat: 19.1215, lng: 72.9050, area: 'Powai',
+    openHours: { open: '10:00', close: '00:00' },
+    bestsellerIds: [1060, 1063, 1062],
     menu: kfcMenu,
   },
   {
@@ -360,6 +371,7 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.3, priceForOne: 380, costForTwo: 760, deliveryTime: 35,
     promoted: true, offer: 'Buy 1 Get 1 Free', category: 'Pizza',
     lat: 19.1724, lng: 72.9570, area: 'Thane West',
+    bestsellerIds: [1083, 1084, 1088],
     menu: pizzaHutMenu,
   },
   {
@@ -371,6 +383,7 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.2, priceForOne: 260, costForTwo: 520, deliveryTime: 25,
     promoted: false, offer: 'Footlong @ ₹299', category: 'Snacks',
     lat: 19.0659, lng: 72.8792, area: 'Kurla West',
+    bestsellerIds: [1102, 1105, 1101],
     menu: subwayMenu,
   },
   {
@@ -382,6 +395,8 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.7, priceForOne: 90, costForTwo: 180, deliveryTime: 20,
     promoted: false, offer: '3 Scoops @ ₹199', category: 'Desserts',
     lat: 19.0986, lng: 72.8353, area: 'Juhu',
+    openHours: { open: '11:00', close: '22:00' },
+    bestsellerIds: [1121, 1120, 1125],
     menu: naturalMenu,
   },
   {
@@ -393,6 +408,8 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.5, priceForOne: 360, costForTwo: 720, deliveryTime: 30,
     promoted: true, offer: 'Free size upgrade', category: 'Beverages',
     lat: 19.0658, lng: 72.8660, area: 'BKC',
+    openHours: { open: '07:00', close: '22:00' },
+    bestsellerIds: [1141, 1140, 1142],
     menu: starbucksMenu,
   },
   {
@@ -404,6 +421,7 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.5, priceForOne: 200, costForTwo: 400, deliveryTime: 25,
     promoted: false, offer: '₹99 Thali', category: 'North Indian',
     lat: 19.0524, lng: 72.8988, area: 'Chembur',
+    bestsellerIds: [1164, 1161, 1167],
     menu: haldiramMenu,
   },
   {
@@ -415,6 +433,7 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.3, priceForOne: 160, costForTwo: 320, deliveryTime: 20,
     promoted: false, offer: '2 plates @ ₹229', category: 'Chinese',
     lat: 19.0866, lng: 72.9089, area: 'Ghatkopar East',
+    bestsellerIds: [1185, 1188, 1181],
     menu: wowMomoMenu,
   },
   {
@@ -426,6 +445,7 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.8, priceForOne: 380, costForTwo: 760, deliveryTime: 35,
     promoted: true, offer: '₹100 OFF on ₹399+', category: 'Biryani',
     lat: 19.0178, lng: 72.8478, area: 'Matunga',
+    bestsellerIds: [1202, 1200, 1203],
     menu: behrouzMenu,
   },
   {
@@ -437,6 +457,7 @@ export const brandRestaurants: Restaurant[] = [
     rating: 4.4, priceForOne: 180, costForTwo: 360, deliveryTime: 25,
     promoted: false, offer: 'Combos from ₹149', category: 'Burgers',
     lat: 19.1451, lng: 72.8442, area: 'Goregaon West',
+    bestsellerIds: [1223, 1221, 1224],
     menu: burgerSinghMenu,
   },
 ];

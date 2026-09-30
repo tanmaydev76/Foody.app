@@ -22,6 +22,8 @@ export interface IOrder extends Document {
   paymentMethod: string;
   orderId: string;
   status: 'placed' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered';
+  deliveryInstructions?: string;
+  tip?: number;
   createdAt: Date;
 }
 
@@ -51,6 +53,8 @@ const OrderSchema = new Schema<IOrder>(
     paymentMethod: { type: String, required: true },
     orderId:       { type: String, required: true, unique: true },
     status:        { type: String, enum: ['placed','confirmed','preparing','out_for_delivery','delivered'], default: 'placed' },
+    deliveryInstructions: { type: String, default: '' },
+    tip:           { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

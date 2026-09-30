@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ClipboardList, Package, ChevronDown, ChevronUp, MapPin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ClipboardList, Package, ChevronDown, ChevronUp, MapPin, RotateCcw } from 'lucide-react';
+import { useCart } from '@/context/CartContext';
 
 interface OrderItem { id: number; name: string; price: number; quantity: number; image: string; }
 interface Order {
@@ -47,7 +49,14 @@ function isTrackable(order: Order): boolean {
 
 function OrderCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(false);
+  const { reorderItems } = useCart();
+  const router = useRouter();
   const date = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  const handleReorder = () => {
+    reorderItems(order.items.map((i) => ({ ...i, veg: false, description: '', category: '', rating: 0, restaurantId: undefined, restaurantName: undefined })));
+    router.push('/cart');
+  };
 
   return (
     <div className="bg-card border border-base rounded-2xl overflow-hidden">
@@ -98,14 +107,22 @@ function OrderCard({ order }: { order: Order }) {
             <p><span className="font-medium text-fg">Payment:</span> {order.paymentMethod}</p>
           </div>
 
-          {isTrackable(order) && (
-            <Link
-              href={`/orders/track?orderId=${order.orderId}&lat=19.0176&lng=72.8562&eta=30&t=${new Date(order.createdAt).getTime()}`}
-              className="flex items-center justify-center gap-2 w-full bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-2.5 rounded-xl text-sm transition-colors"
+          <div className="flex gap-2">
+            {isTrackable(order) && (
+              <Link
+                href={`/orders/track?orderId=${order.orderId}&lat=19.0176&lng=72.8562&eta=30&t=${new Date(order.createdAt).getTime()}`}
+                className="flex-1 flex items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-2.5 rounded-xl text-sm transition-colors"
+              >
+                <MapPin size={15} /> Track
+              </Link>
+            )}
+            <button
+              onClick={handleReorder}
+              className="flex-1 flex items-center justify-center gap-2 bg-base-secondary hover:bg-base border border-base font-semibold py-2.5 rounded-xl text-sm transition-colors"
             >
-              <MapPin size={15} /> 🛵 Track Order Live
-            </Link>
-          )}
+              <RotateCcw size={15} /> Reorder
+            </button>
+          </div>
         </div>
       )}
     </div>

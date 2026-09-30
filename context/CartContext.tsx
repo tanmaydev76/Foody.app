@@ -30,6 +30,11 @@ export const COUPONS: Record<string, { type: 'flat' | 'percent'; value: number; 
 
 const MAX_QTY = 20;
 
+export interface CartConflict {
+  item: FoodItem;
+  fromRestaurant: string;
+}
+
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: FoodItem) => void;
@@ -37,6 +42,10 @@ interface CartContextType {
   increaseQty: (id: number) => void;
   decreaseQty: (id: number) => void;
   clearCart: () => void;
+  reorderItems: (items: CartItem[]) => void;
+  pendingConflict: CartConflict | null;
+  confirmClearAndAdd: () => void;
+  dismissConflict: () => void;
   itemCount: number;
   subtotal: number;
   deliveryFee: number;
@@ -61,6 +70,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [coupon, setCoupon] = useState('');
   const [couponError, setCouponError] = useState('');
+  const [pendingConflict, setPendingConflict] = useState<CartConflict | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -76,6 +86,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (item: FoodItem) => {
     setCart((prev) => {
+      // Multi-restaurant conflict detection
+      if (item.restaurantId && prev.length > 0) {
+        const cartRestaurantId = prev.find((c) => c.restaurantId)?.restaurantId;
+        if (cartRestaurantId && cartRestaurantId !== item.restaurantId) {
+          const fromRestaurant = prev.find((c) => c.restaurantName)?.restaurantName ?? 'another restaurant';
+          setPendingConflict({ item, fromRestaurant });
+          return prev; // don't add yet
+        }
+      }
       const existing = prev.find((c) => c.id === item.id);
       if (existing) {
         if (existing.quantity >= MAX_QTY) return prev;
@@ -84,6 +103,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return [...prev, { ...item, quantity: 1 }];
     });
   };
+
+  const confirmClearAndAdd = () => {
+    if (!pendingConflict) return;
+    const item = pendingConflict.item;
+    setCart([{ ...item, quantity: 1 }]);
+    setCoupon('');
+    setPendingConflict(null);
+  };
+
+  const dismissConflict = () => setPendingConflict(null);
 
   const removeFromCart = (id: number) => setCart((prev) => prev.filter((c) => c.id !== id));
 
@@ -101,6 +130,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = () => { setCart([]); setCoupon(''); };
+
+  const reorderItems = (items: CartItem[]) => {
+    setCart(items.map((i) => ({ ...i, quantity: Math.min(i.quantity, MAX_QTY) })));
+    setCoupon('');
+  };
 
   const applyCoupon = (code: string): boolean => {
     const upper = code.trim().toUpperCase();
@@ -139,7 +173,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider value={{
-      cart, addToCart, removeFromCart, increaseQty, decreaseQty, clearCart,
+      cart, addToCart, removeFromCart, increaseQty, decreaseQty, clearCart, reorderItems,
+      pendingConflict, confirmClearAndAdd, dismissConflict,
       itemCount, subtotal, deliveryFee, discount, taxes, total,
       coupon, couponError, applyCoupon, removeCoupon,
     }}>

@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn, Loader2, XCircle, BookMarked } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useSavedAddresses } from '@/context/SavedAddressesContext';
 
 export default function CheckoutPage() {
   const { cart, subtotal, deliveryFee, discount, taxes, total, clearCart, itemCount, coupon } = useCart();
@@ -13,6 +14,11 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const [form, setForm]           = useState({ name: '', phone: '', address: '', city: '', pincode: '' });
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
+  const [tip, setTip]             = useState(0);
+  const [saveAddr, setSaveAddr]   = useState(false);
+  const [addrLabel, setAddrLabel] = useState('Home');
+  const { addresses, saveAddress } = useSavedAddresses();
   const [payment, setPayment]     = useState<'cod' | 'upi' | 'card'>('upi');
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId]     = useState('');
@@ -104,6 +110,8 @@ export default function CheckoutPage() {
           phone: form.phone,
           paymentMethod: payment === 'cod' ? 'Cash on Delivery' : payment.toUpperCase(),
           orderId: newOrderId,
+          deliveryInstructions,
+          tip,
         }),
       });
       const data = await res.json();
@@ -114,6 +122,9 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (saveAddr && form.address.trim() && form.city.trim() && form.pincode.trim()) {
+      saveAddress({ label: addrLabel, address: form.address, city: form.city, pincode: form.pincode });
+    }
     setSnapshot(snap);
     setOrderId(newOrderId);
     setOrderPlaced(true);
@@ -201,6 +212,26 @@ export default function CheckoutPage() {
             <h2 className="font-bold text-base sm:text-lg mb-4 flex items-center gap-2">
               <MapPin size={18} className="text-primary" /> Delivery Details
             </h2>
+
+            {/* Saved address picker */}
+            {addresses.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-muted mb-2 flex items-center gap-1"><BookMarked size={12} /> Saved Addresses</p>
+                <div className="flex gap-2 flex-wrap">
+                  {addresses.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, address: a.address, city: a.city, pincode: a.pincode }))}
+                      className="px-3 py-1.5 rounded-xl border border-base bg-base-secondary hover:border-primary hover:text-primary text-xs font-medium transition-colors"
+                    >
+                      {a.label} — {a.address.substring(0, 20)}{a.address.length > 20 ? '…' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="sm:col-span-2">
                 <label className="text-xs sm:text-sm font-medium block mb-1.5">Full Name</label>
@@ -234,6 +265,29 @@ export default function CheckoutPage() {
                   className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border bg-base text-sm focus:outline-none focus:ring-2 focus:ring-primary ${errors.city ? 'border-red-500' : 'border-base'}`} />
                 {errors.city && <p className="text-xs text-red-500 mt-1">{errors.city}</p>}
               </div>
+
+              {/* Save address toggle */}
+              <div className="sm:col-span-2 flex items-center gap-3 pt-1">
+                <input
+                  id="save-addr"
+                  type="checkbox"
+                  checked={saveAddr}
+                  onChange={(e) => setSaveAddr(e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
+                <label htmlFor="save-addr" className="text-sm font-medium cursor-pointer">Save this address</label>
+                {saveAddr && (
+                  <select
+                    value={addrLabel}
+                    onChange={(e) => setAddrLabel(e.target.value)}
+                    className="ml-auto px-3 py-1.5 rounded-xl border border-base bg-card text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option>Home</option>
+                    <option>Work</option>
+                    <option>Other</option>
+                  </select>
+                )}
+              </div>
             </div>
           </div>
 
@@ -256,6 +310,39 @@ export default function CheckoutPage() {
               <span>{deliveryMsg}</span>
             </div>
           )}
+
+          <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
+            <h2 className="font-bold text-base sm:text-lg mb-3">🚴 Delivery Preferences</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs sm:text-sm font-medium block mb-1.5">Delivery Instructions <span className="text-muted font-normal">(optional)</span></label>
+                <textarea
+                  value={deliveryInstructions}
+                  onChange={(e) => setDeliveryInstructions(e.target.value)}
+                  placeholder="e.g. Ring the bell twice, leave at door, don't call..."
+                  rows={2}
+                  maxLength={200}
+                  className="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-base bg-base text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs sm:text-sm font-medium block mb-2">Tip for delivery partner</label>
+                <div className="flex gap-2 flex-wrap">
+                  {[0, 20, 30, 50].map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      onClick={() => setTip(amount)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${tip === amount ? 'bg-primary text-white border-primary' : 'border-base hover:border-primary hover:text-primary'}`}
+                    >
+                      {amount === 0 ? 'No tip' : `₹${amount}`}
+                    </button>
+                  ))}
+                </div>
+                {tip > 0 && <p className="text-xs text-green-600 mt-1.5">100% of the tip goes to your delivery partner.</p>}
+              </div>
+            </div>
+          </div>
 
           <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
             <h2 className="font-bold text-base sm:text-lg mb-4 flex items-center gap-2">
@@ -294,11 +381,12 @@ export default function CheckoutPage() {
               {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount ({coupon})</span><span>- ₹{discount}</span></div>}
               <div className="flex justify-between text-muted"><span>Delivery</span><span className="text-fg font-medium">{deliveryFee === 0 ? <span className="text-green-600 font-semibold">FREE</span> : `₹${deliveryFee}`}</span></div>
               <div className="flex justify-between text-muted"><span>Taxes</span><span className="text-fg font-medium">₹{taxes}</span></div>
-              <div className="border-t border-base pt-3 flex justify-between font-bold text-base"><span>To Pay</span><span>₹{total}</span></div>
+              {tip > 0 && <div className="flex justify-between text-muted"><span>Tip</span><span className="text-fg font-medium">₹{tip}</span></div>}
+              <div className="border-t border-base pt-3 flex justify-between font-bold text-base"><span>To Pay</span><span>₹{total + tip}</span></div>
             </div>
             <button type="submit" disabled={placing || deliveryBlocked}
               className="w-full mt-6 bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-              {placing ? 'Placing…' : `Place Order · ₹${total}`} {!placing && <ArrowRight size={18} />}
+              {placing ? 'Placing…' : `Place Order · ₹${total + tip}`} {!placing && <ArrowRight size={18} />}
             </button>
             {deliveryBlocked && <p className="text-xs text-red-500 text-center mt-2">Delivery not available at this address</p>}
             <p className="text-xs text-muted text-center mt-2">
@@ -314,7 +402,7 @@ export default function CheckoutPage() {
             {itemCount} item{itemCount > 1 ? 's' : ''} · ~{deliveryEta ?? '25–35'} min
             {discount > 0 && <span className="text-green-600 ml-1">· Saved ₹{discount}</span>}
           </span>
-          <span className="font-bold">₹{total}</span>
+          <span className="font-bold">₹{total + tip}</span>
         </div>
         <button
           type="button"
@@ -322,7 +410,7 @@ export default function CheckoutPage() {
           disabled={placing || deliveryBlocked}
           className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-full flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-60"
         >
-          {placing ? 'Placing…' : `Place Order · ₹${total}`} {!placing && <ArrowRight size={16} />}
+          {placing ? 'Placing…' : `Place Order · ₹${total + tip}`} {!placing && <ArrowRight size={16} />}
         </button>
       </div>
     </div>

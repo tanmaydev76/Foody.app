@@ -10,6 +10,8 @@ import { haversineKm } from '@/lib/haversine';
 import { calculateETA } from '@/lib/distance';
 import { useLocation } from '@/context/LocationContext';
 import { RESTAURANT_LOCATION } from '@/lib/constants';
+import { isRestaurantOpen } from '@/lib/restaurantHours';
+import { useFavourites } from '@/context/FavouritesContext';
 
 const RestaurantsMap = dynamic(() => import('@/components/RestaurantsMap'), { ssr: false });
 
@@ -27,7 +29,10 @@ export default function RestaurantsPage() {
   const [search,    setSearch]    = useState('');
   const [cuisine,   setCuisine]   = useState('All');
   const [sort,      setSort]      = useState('eta');
-  const [promoOnly, setPromoOnly] = useState(false);
+  const [promoOnly,   setPromoOnly]   = useState(false);
+  const [openOnly,    setOpenOnly]    = useState(false);
+  const [favsOnly,    setFavsOnly]    = useState(false);
+  const { favourites } = useFavourites();
   const [view,      setView]      = useState<'grid' | 'map'>('grid');
   const [mapSelected, setMapSelected] = useState<Restaurant | null>(null);
 
@@ -53,6 +58,8 @@ export default function RestaurantsPage() {
     }
     if (cuisine !== 'All') list = list.filter((r) => r.cuisines.some((c) => c.toLowerCase().includes(cuisine.toLowerCase())));
     if (promoOnly) list = list.filter((r) => r.promoted);
+    if (openOnly)  list = list.filter((r) => isRestaurantOpen(r.openHours));
+    if (favsOnly)  list = list.filter((r) => favourites.includes(r.id));
     if (sort === 'eta')             list.sort((a, b) => a.eta - b.eta);
     else if (sort === 'rating')     list.sort((a, b) => b.rating - a.rating);
     else if (sort === 'price_asc')  list.sort((a, b) => (a.costForTwo ?? a.priceForOne * 2) - (b.costForTwo ?? b.priceForOne * 2));
@@ -137,6 +144,22 @@ export default function RestaurantsPage() {
           }`}
         >
           🏷 Offers
+        </button>
+        <button
+          onClick={() => setOpenOnly(!openOnly)}
+          className={`shrink-0 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-colors whitespace-nowrap ${
+            openOnly ? 'bg-green-600 text-white border-green-600' : 'border-base bg-card hover:border-green-600 hover:text-green-600'
+          }`}
+        >
+          🟢 Open Now
+        </button>
+        <button
+          onClick={() => setFavsOnly(!favsOnly)}
+          className={`shrink-0 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-colors whitespace-nowrap ${
+            favsOnly ? 'bg-red-500 text-white border-red-500' : 'border-base bg-card hover:border-red-500 hover:text-red-500'
+          }`}
+        >
+          ❤️ Favourites {favourites.length > 0 && `(${favourites.length})`}
         </button>
       </div>
 

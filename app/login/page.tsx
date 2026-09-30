@@ -99,12 +99,6 @@ export default function LoginPage() {
               {loading ? 'Logging in…' : 'Log In'}
             </button>
 
-            <Link
-              href="/forgot-password"
-              className="w-full text-center py-3 rounded-xl border border-base text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
-            >
-              Forgot Password?
-            </Link>
           </form>
 
           <p className="text-center text-sm text-muted mt-6">

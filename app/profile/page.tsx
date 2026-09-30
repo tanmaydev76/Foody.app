@@ -3,13 +3,19 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Calendar, ClipboardList, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle, Lock } from 'lucide-react';
+import { User, Mail, Calendar, ClipboardList, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle, Lock, Heart, MapPin, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getPasswordChecks, passwordStrengthScore, isPasswordStrong } from '@/lib/passwordRules';
+import { useFavourites } from '@/context/FavouritesContext';
+import { useSavedAddresses } from '@/context/SavedAddressesContext';
+import { allRestaurants } from '@/data/restaurants';
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { favourites, toggleFavourite } = useFavourites();
+  const { addresses, deleteAddress } = useSavedAddresses();
+  const favouriteRestaurants = allRestaurants.filter((r) => favourites.includes(r.id));
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -194,6 +200,68 @@ export default function ProfilePage() {
           </button>
         </form>
       </div>
+
+      {/* Favourite Restaurants */}
+      {favouriteRestaurants.length > 0 && (
+        <div className="bg-card border border-base rounded-2xl p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Heart size={18} className="text-red-500 fill-red-500" />
+            <h2 className="font-bold text-lg">Favourites</h2>
+            <span className="ml-auto text-xs text-muted">{favouriteRestaurants.length} saved</span>
+          </div>
+          <div className="space-y-2">
+            {favouriteRestaurants.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 text-sm">
+                <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 bg-base-secondary flex items-center justify-center"
+                  style={r.brandColor ? { background: r.brandColor } : {}}>
+                  {r.brandColor
+                    ? <span className="text-white font-bold text-xs">{r.brandInitials ?? r.name.charAt(0)}</span>
+                    : <span className="text-lg">🍽️</span>
+                  }
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Link
+                    href={r.menu ? `/restaurants/${r.id}` : `/menu?category=${encodeURIComponent(r.category)}`}
+                    className="font-medium hover:text-primary transition-colors truncate block"
+                  >
+                    {r.name}
+                  </Link>
+                  <p className="text-xs text-muted truncate">{r.cuisines.join(', ')}</p>
+                </div>
+                <button onClick={() => toggleFavourite(r.id)} className="shrink-0 text-muted hover:text-red-500 transition-colors" aria-label="Remove favourite">
+                  <Heart size={15} className="fill-red-400 text-red-400" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Saved Addresses */}
+      {addresses.length > 0 && (
+        <div className="bg-card border border-base rounded-2xl p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MapPin size={18} className="text-primary" />
+            <h2 className="font-bold text-lg">Saved Addresses</h2>
+          </div>
+          <div className="space-y-3">
+            {addresses.map((a) => (
+              <div key={a.id} className="flex items-start gap-3 text-sm border-b border-base pb-3 last:border-0 last:pb-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <MapPin size={14} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-xs text-primary">{a.label}</p>
+                  <p className="text-muted text-xs mt-0.5">{a.address}, {a.city} – {a.pincode}</p>
+                </div>
+                <button onClick={() => deleteAddress(a.id)} className="shrink-0 text-muted hover:text-red-500 transition-colors mt-1">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-3">

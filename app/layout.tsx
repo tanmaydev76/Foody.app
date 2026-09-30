@@ -4,8 +4,11 @@ import { ThemeProvider } from '@/context/ThemeContext';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { LocationProvider } from '@/context/LocationContext';
+import { FavouritesProvider } from '@/context/FavouritesContext';
+import { SavedAddressesProvider } from '@/context/SavedAddressesContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CartConflictModal from '@/components/CartConflictModal';
 
 export const metadata: Metadata = {
   title: 'Foody | Food Delivery, Faster & Fresh',
@@ -36,11 +39,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <AuthProvider>
             <LocationProvider>
+            <FavouritesProvider>
+            <SavedAddressesProvider>
             <CartProvider>
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
+              <CartConflictModal />
             </CartProvider>
+            </SavedAddressesProvider>
+            </FavouritesProvider>
             </LocationProvider>
           </AuthProvider>
         </ThemeProvider>

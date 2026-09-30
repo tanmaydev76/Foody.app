@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Star, Clock, MapPin } from 'lucide-react';
+import { Star, Clock, MapPin, Heart } from 'lucide-react';
 import { Restaurant } from '@/data/restaurants';
+import { isRestaurantOpen } from '@/lib/restaurantHours';
+import { useFavourites } from '@/context/FavouritesContext';
 
 interface Props {
   r: Restaurant;
@@ -18,6 +20,8 @@ interface Props {
 
 export default function RestaurantCard({ r, href: hrefProp, distKm, eta }: Props) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const open = isRestaurantOpen(r.openHours);
+  const { isFavourite, toggleFavourite } = useFavourites();
 
   const href = hrefProp ?? (
     r.menu ? `/restaurants/${r.id}` : `/menu?category=${encodeURIComponent(r.category)}`
@@ -42,6 +46,18 @@ export default function RestaurantCard({ r, href: hrefProp, distKm, eta }: Props
             Promoted
           </span>
         )}
+        {/* Favourite heart */}
+        <button
+          onClick={(e) => { e.preventDefault(); toggleFavourite(r.id); }}
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow hover:scale-110 transition-transform"
+          aria-label={isFavourite(r.id) ? 'Remove from favourites' : 'Add to favourites'}
+        >
+          <Heart
+            size={15}
+            className={isFavourite(r.id) ? 'text-red-500 fill-red-500' : 'text-gray-400'}
+            fill={isFavourite(r.id) ? 'currentColor' : 'none'}
+          />
+        </button>
         {r.offer && (
           <span className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md">
             {r.offer}
@@ -69,7 +85,12 @@ export default function RestaurantCard({ r, href: hrefProp, distKm, eta }: Props
             <Star size={10} fill="currentColor" /> {r.rating}
           </span>
         </div>
-        <p className="text-muted text-sm mt-0.5 truncate">{r.cuisines.join(', ')}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-muted text-sm truncate">{r.cuisines.join(', ')}</p>
+          <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${open ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
+            {open ? 'Open' : 'Closed'}
+          </span>
+        </div>
         <div className="flex items-center gap-3 mt-1.5 text-sm text-muted flex-wrap">
           <span>₹{r.costForTwo ?? r.priceForOne * 2} for two</span>
           <span className="w-1 h-1 rounded-full bg-muted/50 shrink-0" />

@@ -11,6 +11,7 @@ import { haversineKm } from '@/lib/haversine';
 import { calculateETA } from '@/lib/distance';
 import { useLocation } from '@/context/LocationContext';
 import { RESTAURANT_LOCATION } from '@/lib/constants';
+import { isRestaurantOpen } from '@/lib/restaurantHours';
 
 function BrandLogoBox({ restaurant }: { restaurant: Restaurant }) {
   const [failed, setFailed] = useState(false);
@@ -141,10 +142,25 @@ export default function RestaurantPage() {
                 <MapPin size={14} /> {distKm} km · {restaurant.area}
               </span>
               <span className="text-muted">₹{restaurant.costForTwo ?? restaurant.priceForOne * 2} for two</span>
+              {(() => {
+                const open = isRestaurantOpen(restaurant.openHours);
+                return (
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${open ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    {open ? '● Open Now' : '● Closed'}
+                  </span>
+                );
+              })()}
             </div>
           </div>
         </div>
       </div>
+
+      {!isRestaurantOpen(restaurant.openHours) && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-sm rounded-2xl px-4 py-3 mb-4 flex items-center gap-2">
+          <span className="text-lg">🕐</span>
+          <span>This restaurant is currently closed. You can still browse the menu and place an order for when they open.</span>
+        </div>
+      )}
 
       {/* ── No menu fallback ── */}
       {!restaurant.menu?.length && (
@@ -202,6 +218,27 @@ export default function RestaurantPage() {
               ))}
             </div>
 
+            {/* Bestsellers section */}
+            {restaurant.bestsellerIds && restaurant.bestsellerIds.length > 0 && (() => {
+              const bestsellerItems = restaurant.bestsellerIds!
+                .map((id) => restaurant.menu!.find((i) => i.id === id))
+                .filter(Boolean) as typeof restaurant.menu;
+              if (!bestsellerItems?.length) return null;
+              return (
+                <div className="mb-10 scroll-mt-32">
+                  <h2 className="text-lg font-extrabold mb-4 flex items-center gap-2">
+                    🔥 Bestsellers
+                    <span className="text-xs font-normal text-muted">({bestsellerItems.length} items)</span>
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
+                    {bestsellerItems.map((item) => (
+                      <FoodCard key={item.id} item={item} isBestseller />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Menu sections */}
             {categories.map((cat) => {
               const items = restaurant.menu!.filter((i) => i.category === cat);
@@ -218,7 +255,7 @@ export default function RestaurantPage() {
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
                     {items.map((item) => (
-                      <FoodCard key={item.id} item={item} />
+                      <FoodCard key={item.id} item={item} isBestseller={restaurant.bestsellerIds?.includes(item.id)} />
                     ))}
                   </div>
                 </div>
