@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { ShoppingCart, Menu, X, MapPin, User, ChevronDown, LogOut, ClipboardList, Bike } from 'lucide-react';
+import { ShoppingCart, Menu, X, MapPin, User, ChevronDown, LogOut, ClipboardList, Bike, Search } from 'lucide-react';
 import Logo from './Logo';
 import ThemeToggle from './ThemeToggle';
 import { useCart } from '@/context/CartContext';
@@ -12,6 +12,7 @@ import { useLocation } from '@/context/LocationContext';
 import dynamic from 'next/dynamic';
 
 const LocationPickerModal = dynamic(() => import('./LocationPickerModal'), { ssr: false });
+const GlobalSearch = dynamic(() => import('./GlobalSearch'), { ssr: false });
 
 const navLinks = [
   { name: 'Home',        href: '/' },
@@ -30,6 +31,7 @@ export default function Header() {
   const [open, setOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +101,13 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="w-11 h-11 rounded-full flex items-center justify-center border border-base bg-base-secondary hover:border-primary hover:text-primary transition-colors"
+              aria-label="Search"
+            >
+              <Search size={18} />
+            </button>
             <ThemeToggle />
             <Link
               href="/cart"
@@ -220,6 +229,7 @@ export default function Header() {
     </header>
 
     <LocationPickerModal open={locationModalOpen} onClose={() => setLocationModalOpen(false)} />
+    {searchOpen && <GlobalSearch onClose={() => setSearchOpen(false)} />}
     </>
   );
 }

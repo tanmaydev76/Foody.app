@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ClipboardList, Package, ChevronDown, ChevronUp, MapPin, RotateCcw } from 'lucide-react';
+import { ClipboardList, Package, ChevronDown, ChevronUp, MapPin, RotateCcw, Star } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useReviews } from '@/context/ReviewsContext';
+import RateOrderModal from '@/components/RateOrderModal';
 
 interface OrderItem { id: number; name: string; price: number; quantity: number; image: string; }
 interface Order {
@@ -49,8 +51,11 @@ function isTrackable(order: Order): boolean {
 
 function OrderCard({ order }: { order: Order }) {
   const [expanded, setExpanded] = useState(false);
+  const [rateOpen, setRateOpen] = useState(false);
   const { reorderItems } = useCart();
+  const { getReview } = useReviews();
   const router = useRouter();
+  const review = getReview(order.orderId);
   const date = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
   const handleReorder = () => {
@@ -107,7 +112,7 @@ function OrderCard({ order }: { order: Order }) {
             <p><span className="font-medium text-fg">Payment:</span> {order.paymentMethod}</p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {isTrackable(order) && (
               <Link
                 href={`/orders/track?orderId=${order.orderId}&lat=19.0176&lng=72.8562&eta=30&t=${new Date(order.createdAt).getTime()}`}
@@ -122,9 +127,25 @@ function OrderCard({ order }: { order: Order }) {
             >
               <RotateCcw size={15} /> Reorder
             </button>
+            {order.status === 'delivered' && (
+              review ? (
+                <div className="flex-1 flex items-center justify-center gap-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 font-semibold py-2.5 rounded-xl text-sm">
+                  <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                  {review.rating}/5 Rated
+                </div>
+              ) : (
+                <button
+                  onClick={() => setRateOpen(true)}
+                  className="flex-1 flex items-center justify-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 font-semibold py-2.5 rounded-xl text-sm transition-colors"
+                >
+                  <Star size={14} /> Rate Order
+                </button>
+              )
+            )}
           </div>
         </div>
       )}
+      {rateOpen && <RateOrderModal orderId={order.orderId} onClose={() => setRateOpen(false)} />}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { LocationProvider } from '@/context/LocationContext';
 import { FavouritesProvider } from '@/context/FavouritesContext';
 import { SavedAddressesProvider } from '@/context/SavedAddressesContext';
+import { ReviewsProvider } from '@/context/ReviewsContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartConflictModal from '@/components/CartConflictModal';
@@ -41,12 +42,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <LocationProvider>
             <FavouritesProvider>
             <SavedAddressesProvider>
+            <ReviewsProvider>
             <CartProvider>
               <Header />
               <main className="flex-1">{children}</main>
               <Footer />
               <CartConflictModal />
             </CartProvider>
+            </ReviewsProvider>
             </SavedAddressesProvider>
             </FavouritesProvider>
             </LocationProvider>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn, Loader2, XCircle, BookMarked } from 'lucide-react';
+import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn, Loader2, XCircle, BookMarked, Clock } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSavedAddresses } from '@/context/SavedAddressesContext';
@@ -16,6 +16,9 @@ export default function CheckoutPage() {
   const [form, setForm]           = useState({ name: '', phone: '', address: '', city: '', pincode: '' });
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [tip, setTip]             = useState(0);
+  const [scheduleDelivery, setScheduleDelivery] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
   const [saveAddr, setSaveAddr]   = useState(false);
   const [addrLabel, setAddrLabel] = useState('Home');
   const { addresses, saveAddress } = useSavedAddresses();
@@ -25,7 +28,7 @@ export default function CheckoutPage() {
   const [errors, setErrors]       = useState<Record<string, string>>({});
   const [placing, setPlacing]     = useState(false);
   const [placeError, setPlaceError] = useState('');
-  const [snapshot, setSnapshot]   = useState({ subtotal: 0, deliveryFee: 0, discount: 0, taxes: 0, total: 0, coupon: '' });
+  const [snapshot, setSnapshot]   = useState({ subtotal: 0, deliveryFee: 0, discount: 0, taxes: 0, total: 0, coupon: '', scheduledFor: '' });
   const [deliveryEta, setDeliveryEta]           = useState<number | null>(null);
   const [deliveryCheckRunning, setDeliveryCheckRunning] = useState(false);
   const [deliveryBlocked, setDeliveryBlocked]   = useState(false);
@@ -93,7 +96,10 @@ export default function CheckoutPage() {
     e.preventDefault();
     if (placing || cart.length === 0 || deliveryBlocked || !validate()) return;
 
-    const snap = { subtotal, deliveryFee, discount, taxes, total, coupon };
+    const scheduledLabel = scheduleDelivery && scheduleDate && scheduleTime
+      ? new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+      : '';
+    const snap = { subtotal, deliveryFee, discount, taxes, total, coupon, scheduledFor: scheduledLabel };
     const newOrderId = 'FOODY' + Math.floor(100000 + Math.random() * 900000);
 
     setPlacing(true);
@@ -112,6 +118,9 @@ export default function CheckoutPage() {
           orderId: newOrderId,
           deliveryInstructions,
           tip,
+          scheduledFor: scheduleDelivery && scheduleDate && scheduleTime
+            ? new Date(`${scheduleDate}T${scheduleTime}`).toISOString()
+            : null,
         }),
       });
       const data = await res.json();
@@ -161,7 +170,10 @@ export default function CheckoutPage() {
         </div>
         <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold">Order Placed! 🎉</h1>
         <p className="text-muted mt-3 text-sm">
-          Thank you, {form.name}! Your meal is being prepared and arrives in ~{deliveryEta ?? 30} minutes.
+          Thank you, {form.name}!{' '}
+          {snapshot.scheduledFor
+            ? `Your order is scheduled for ${snapshot.scheduledFor}.`
+            : `Your meal is being prepared and arrives in ~${deliveryEta ?? 30} minutes.`}
         </p>
         <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6 mt-6 sm:mt-8 text-left space-y-3">
           {[['Order ID', orderId], ['Address', `${form.address}, ${form.city} – ${form.pincode}`], ['Payment', payment === 'cod' ? 'Cash on Delivery' : payment.toUpperCase()]].map(([l, v]) => (
@@ -340,6 +352,54 @@ export default function CheckoutPage() {
                   ))}
                 </div>
                 {tip > 0 && <p className="text-xs text-green-600 mt-1.5">100% of the tip goes to your delivery partner.</p>}
+              </div>
+
+              {/* Scheduled delivery */}
+              <div>
+                <div className="flex items-center gap-3">
+                  <input
+                    id="schedule-toggle"
+                    type="checkbox"
+                    checked={scheduleDelivery}
+                    onChange={(e) => setScheduleDelivery(e.target.checked)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <label htmlFor="schedule-toggle" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
+                    <Clock size={14} className="text-primary" /> Schedule Delivery
+                  </label>
+                </div>
+                {scheduleDelivery && (
+                  <div className="mt-3 grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium block mb-1 text-muted">Date</label>
+                      <input
+                        type="date"
+                        value={scheduleDate}
+                        min={new Date().toISOString().split('T')[0]}
+                        onChange={(e) => setScheduleDate(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-base bg-base text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium block mb-1 text-muted">Time slot</label>
+                      <select
+                        value={scheduleTime}
+                        onChange={(e) => setScheduleTime(e.target.value)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-base bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">Select time</option>
+                        {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00'].map((t) => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {scheduleDelivery && scheduleDate && scheduleTime && (
+                      <p className="sm:col-span-2 text-xs text-primary font-medium">
+                        Scheduled for {new Date(`${scheduleDate}T${scheduleTime}`).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

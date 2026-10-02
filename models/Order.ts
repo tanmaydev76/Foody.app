@@ -24,6 +24,7 @@ export interface IOrder extends Document {
   status: 'placed' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered';
   deliveryInstructions?: string;
   tip?: number;
+  scheduledFor?: Date;
   createdAt: Date;
 }
 
@@ -55,6 +56,7 @@ const OrderSchema = new Schema<IOrder>(
     status:        { type: String, enum: ['placed','confirmed','preparing','out_for_delivery','delivered'], default: 'placed' },
     deliveryInstructions: { type: String, default: '' },
     tip:           { type: Number, default: 0, min: 0 },
+    scheduledFor:  { type: Date, default: null },
   },
   { timestamps: true }
 );
