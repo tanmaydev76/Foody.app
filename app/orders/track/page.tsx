@@ -4,6 +4,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, ChefHat, Package, Bike, Home, Phone, ArrowLeft, X } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const OrderTrackingMap = dynamic(() => import('@/components/OrderTrackingMap'), { ssr: false });
 
 const STATUSES = [
   { key: 'placed',           icon: CheckCircle2, label: 'Order Placed',      sub: 'We received your order',          color: 'text-blue-500',   bg: 'bg-blue-500' },
@@ -97,11 +100,27 @@ export default function TrackOrderPage() {
 
   const [statusIdx, setStatusIdx]     = useState(0);
   const [showModal, setShowModal]     = useState(trackingExpired);
+  const [riderProgress, setRiderProgress] = useState(0);
   const advancedRef                   = useRef(false);
 
   const currentStatus = STATUSES[statusIdx];
   const isDelivered   = statusIdx === STATUSES.length - 1;
   const countdown     = useCountdown(etaMins * 60 * 1000);
+
+  /* Animate rider progress when out_for_delivery */
+  useEffect(() => {
+    const outIdx = STATUSES.findIndex((s) => s.key === 'out_for_delivery');
+    if (statusIdx !== outIdx) return;
+    const duration = STATUS_DURATIONS['out_for_delivery'];
+    const start = Date.now();
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(1, elapsed / duration);
+      setRiderProgress(progress);
+      if (progress >= 1) clearInterval(tick);
+    }, 200);
+    return () => clearInterval(tick);
+  }, [statusIdx]);
 
   /* Auto-advance through all statuses via timers */
   useEffect(() => {
@@ -174,6 +193,18 @@ export default function TrackOrderPage() {
             </div>
           )}
         </div>
+
+        {/* Live map */}
+        {!trackingExpired && (
+          <div className="mb-6">
+            <OrderTrackingMap
+              deliveryLat={addrLat}
+              deliveryLng={addrLng}
+              status={currentStatus.key}
+              riderProgress={isDelivered ? 1 : riderProgress}
+            />
+          </div>
+        )}
 
         {/* Status timeline — only show delivered step once order is done */}
         <div className="bg-card border border-base rounded-2xl p-5 mb-6">
