@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       deliveryFee, taxes, total, address, phone, paymentMethod, orderId,
       deliveryInstructions: deliveryInstructions ?? '',
       tip: tip ?? 0,
-      scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+      ...(scheduledFor ? { scheduledFor: new Date(scheduledFor) } : {}),
     });
 
     return NextResponse.json({ order }, { status: 201 });

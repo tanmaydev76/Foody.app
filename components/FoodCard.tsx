@@ -2,13 +2,22 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Star, Plus, Minus } from 'lucide-react';
+import { Star, Plus, Minus, Settings2 } from 'lucide-react';
 import { FoodItem, useCart } from '@/context/CartContext';
+import dynamic from 'next/dynamic';
+import type { Customization } from './CustomizeModal';
+
+const CustomizeModal = dynamic(() => import('./CustomizeModal'), { ssr: false });
 
 export default function FoodCard({ item, isBestseller }: { item: FoodItem; isBestseller?: boolean }) {
   const { cart, addToCart, increaseQty, decreaseQty } = useCart();
   const cartItem = cart.find((c) => c.id === item.id);
-  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgLoaded, setImgLoaded]       = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+
+  const handleAddWithCustomization = (customizedItem: FoodItem, customization: Customization) => {
+    addToCart({ ...customizedItem, customization } as FoodItem & { customization: Customization });
+  };
 
   return (
     <div className="bg-card border border-base rounded-xl sm:rounded-2xl overflow-hidden flex flex-col group hover:shadow-lg hover:shadow-black/5 transition-shadow">
@@ -54,6 +63,17 @@ export default function FoodCard({ item, isBestseller }: { item: FoodItem; isBes
             )}
           </div>
 
+          {/* Customize button for brand items */}
+          {item.restaurantId && cartItem && (
+            <button
+              onClick={() => setCustomizeOpen(true)}
+              className="text-muted hover:text-primary transition-colors"
+              aria-label="Customise"
+            >
+              <Settings2 size={14} />
+            </button>
+          )}
+
           {cartItem ? (
             <div className="flex items-center gap-1.5 sm:gap-3 bg-primary/10 rounded-full px-1.5 sm:px-2 py-1 sm:py-1.5">
               <button
@@ -75,7 +95,7 @@ export default function FoodCard({ item, isBestseller }: { item: FoodItem; isBes
             </div>
           ) : (
             <button
-              onClick={() => addToCart(item)}
+              onClick={() => item.restaurantId ? setCustomizeOpen(true) : addToCart(item)}
               className="bg-primary hover:bg-primary-dark text-white text-[10px] sm:text-xs font-semibold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full transition-colors flex items-center gap-0.5 sm:gap-1 whitespace-nowrap"
             >
               <Plus size={11} /> Add
@@ -83,6 +103,14 @@ export default function FoodCard({ item, isBestseller }: { item: FoodItem; isBes
           )}
         </div>
       </div>
+
+      {customizeOpen && (
+        <CustomizeModal
+          item={item}
+          onAdd={handleAddWithCustomization}
+          onClose={() => setCustomizeOpen(false)}
+        />
+      )}
     </div>
   );
 }

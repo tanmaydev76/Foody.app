@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Calendar, ClipboardList, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle, Lock, Heart, MapPin, Trash2 } from 'lucide-react';
+import { User, Mail, Calendar, ClipboardList, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle, Lock, Heart, MapPin, Trash2, Coins, Gift, Copy } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getPasswordChecks, passwordStrengthScore, isPasswordStrong } from '@/lib/passwordRules';
 import { useFavourites } from '@/context/FavouritesContext';
 import { useSavedAddresses } from '@/context/SavedAddressesContext';
+import { useLoyalty } from '@/context/LoyaltyContext';
+import { useReferral } from '@/context/ReferralContext';
 import { allRestaurants } from '@/data/restaurants';
 
 export default function ProfilePage() {
@@ -15,7 +17,13 @@ export default function ProfilePage() {
   const router = useRouter();
   const { favourites, toggleFavourite } = useFavourites();
   const { addresses, deleteAddress } = useSavedAddresses();
+  const { points, pointsToDiscount } = useLoyalty();
+  const { myCode, generateCode } = useReferral();
+  const [copied, setCopied] = useState(false);
   const favouriteRestaurants = allRestaurants.filter((r) => favourites.includes(r.id));
+
+  // Generate code if not yet created
+  useEffect(() => { if (user) generateCode(user.name); }, [user]);
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -262,6 +270,58 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Loyalty Points */}
+      <div className="bg-card border border-base rounded-2xl p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Coins size={18} className="text-yellow-500" />
+          <h2 className="font-bold text-lg">Loyalty Points</h2>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-3xl font-extrabold text-yellow-500">{points}</p>
+            <p className="text-xs text-muted mt-0.5">points earned</p>
+          </div>
+          <div className="text-right">
+            <p className="text-lg font-bold">₹{pointsToDiscount(points)}</p>
+            <p className="text-xs text-muted">redeemable value</p>
+          </div>
+        </div>
+        <div className="mt-3 h-2 bg-base-secondary rounded-full overflow-hidden">
+          <div
+            className="h-full bg-yellow-400 rounded-full transition-all"
+            style={{ width: `${Math.min(100, (points % 100))}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted mt-1.5">{100 - (points % 100)} more points to next ₹10 reward · Earn 1 pt per ₹10 spent</p>
+      </div>
+
+      {/* Referral Code */}
+      <div className="bg-card border border-base rounded-2xl p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Gift size={18} className="text-green-500" />
+          <h2 className="font-bold text-lg">Referral Code</h2>
+        </div>
+        <p className="text-sm text-muted mb-3">Share your code and give friends ₹50 off their first order.</p>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-base-secondary border border-base rounded-xl px-4 py-3 font-mono font-bold text-lg tracking-widest text-center">
+            {myCode || '—'}
+          </div>
+          <button
+            onClick={() => {
+              if (!myCode) return;
+              navigator.clipboard.writeText(myCode).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+            className="w-12 h-12 rounded-xl border border-base bg-base-secondary hover:border-primary hover:text-primary transition-colors flex items-center justify-center"
+          >
+            {copied ? <CheckCircle2 size={18} className="text-green-500" /> : <Copy size={18} />}
+          </button>
+        </div>
+        {copied && <p className="text-xs text-green-600 mt-1.5 text-center">Copied to clipboard!</p>}
+      </div>
 
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-3">

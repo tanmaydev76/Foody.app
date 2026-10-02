@@ -17,6 +17,7 @@ export interface FoodItem {
 
 export interface CartItem extends FoodItem {
   quantity: number;
+  customization?: { spiceLevel?: string; addOns?: { name: string; price: number }[] };
 }
 
 export const COUPONS: Record<string, { type: 'flat' | 'percent'; value: number; minOrder: number; description: string }> = {

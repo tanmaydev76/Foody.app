@@ -3,14 +3,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn, Loader2, XCircle, BookMarked, Clock } from 'lucide-react';
+import { CheckCircle2, MapPin, Wallet, Banknote, Smartphone, ArrowRight, Home, LogIn, Loader2, XCircle, BookMarked, Clock, Star, Gift, Coins } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useSavedAddresses } from '@/context/SavedAddressesContext';
+import { useLoyalty } from '@/context/LoyaltyContext';
+import { useReferral } from '@/context/ReferralContext';
+import { requestNotificationPermission, scheduleOrderNotifications } from '@/lib/notifications';
 
 export default function CheckoutPage() {
   const { cart, subtotal, deliveryFee, discount, taxes, total, clearCart, itemCount, coupon } = useCart();
   const { user, loading: authLoading } = useAuth();
+  const { points, addPoints, redeemPoints, pointsToDiscount, maxRedeemable } = useLoyalty();
+  const { generateCode, applyReferral, appliedReferral, referralDiscount, clearReferral } = useReferral();
   const router = useRouter();
 
   const [form, setForm]           = useState({ name: '', phone: '', address: '', city: '', pincode: '' });
@@ -19,6 +24,9 @@ export default function CheckoutPage() {
   const [scheduleDelivery, setScheduleDelivery] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
+  const [redeemPts, setRedeemPts]       = useState(0);
+  const [referralCode, setReferralCode] = useState('');
+  const [referralMsg, setReferralMsg]   = useState('');
   const [saveAddr, setSaveAddr]   = useState(false);
   const [addrLabel, setAddrLabel] = useState('Home');
   const { addresses, saveAddress } = useSavedAddresses();
@@ -36,9 +44,12 @@ export default function CheckoutPage() {
   const [deliveryCoords, setDeliveryCoords]     = useState<{ lat: number; lng: number } | null>(null);
   const deliveryDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /* Pre-fill name from auth user */
+  /* Pre-fill name from auth user and generate referral code */
   useEffect(() => {
-    if (user && !form.name) setForm((f) => ({ ...f, name: user.name }));
+    if (user) {
+      if (!form.name) setForm((f) => ({ ...f, name: user.name }));
+      generateCode(user.name);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -134,6 +145,14 @@ export default function CheckoutPage() {
     if (saveAddr && form.address.trim() && form.city.trim() && form.pincode.trim()) {
       saveAddress({ label: addrLabel, address: form.address, city: form.city, pincode: form.pincode });
     }
+    // Award loyalty points (1 per ₹10 spent)
+    addPoints(total + tip);
+    // Deduct redeemed points
+    if (redeemPts > 0) redeemPoints(redeemPts);
+    // Request notification permission and schedule status updates
+    requestNotificationPermission().then((granted) => {
+      if (granted) scheduleOrderNotifications(newOrderId);
+    });
     setSnapshot(snap);
     setOrderId(newOrderId);
     setOrderPlaced(true);
@@ -404,6 +423,77 @@ export default function CheckoutPage() {
             </div>
           </div>
 
+          {/* Loyalty Points */}
+          {points > 0 && (
+            <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
+              <h2 className="font-bold text-base sm:text-lg mb-3 flex items-center gap-2">
+                <Coins size={18} className="text-yellow-500" /> Loyalty Points
+              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold">{points} points available</p>
+                  <p className="text-xs text-muted">= ₹{pointsToDiscount(points)} discount</p>
+                </div>
+                <div className="text-xs text-muted text-right">Max redeemable<br />
+                  <span className="font-semibold text-primary">{maxRedeemable(total)} pts = ₹{pointsToDiscount(maxRedeemable(total))}</span>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {[0, Math.floor(maxRedeemable(total) * 0.5), maxRedeemable(total)].filter((v, i, a) => a.indexOf(v) === i && v <= points).map((pts) => (
+                  <button
+                    key={pts}
+                    type="button"
+                    onClick={() => setRedeemPts(pts)}
+                    className={`px-3 py-2 rounded-xl text-sm font-semibold border transition-colors ${redeemPts === pts ? 'bg-yellow-500 text-white border-yellow-500' : 'border-base hover:border-yellow-500 hover:text-yellow-600'}`}
+                  >
+                    {pts === 0 ? 'None' : `${pts} pts (₹${pointsToDiscount(pts)} off)`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Referral Code */}
+          <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
+            <h2 className="font-bold text-base sm:text-lg mb-3 flex items-center gap-2">
+              <Gift size={18} className="text-green-500" /> Referral Code
+            </h2>
+            {appliedReferral ? (
+              <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-green-700 dark:text-green-400">Code: {appliedReferral}</p>
+                  <p className="text-xs text-green-600 dark:text-green-500">₹{referralDiscount} discount applied!</p>
+                </div>
+                <button type="button" onClick={() => { clearReferral(); setReferralCode(''); setReferralMsg(''); }} className="text-xs text-muted hover:text-red-500 transition-colors">Remove</button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => { setReferralCode(e.target.value.toUpperCase()); setReferralMsg(''); }}
+                  placeholder="Enter referral code"
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-base bg-base text-sm focus:outline-none focus:ring-2 focus:ring-primary uppercase"
+                  maxLength={10}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const result = applyReferral(referralCode);
+                    setReferralMsg(result.message);
+                    if (result.success) setReferralCode('');
+                  }}
+                  className="px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl text-sm transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+            {referralMsg && !appliedReferral && (
+              <p className={`text-xs mt-2 ${referralMsg.includes('!') ? 'text-green-600' : 'text-red-500'}`}>{referralMsg}</p>
+            )}
+          </div>
+
           <div className="bg-card border border-base rounded-xl sm:rounded-2xl p-4 sm:p-6">
             <h2 className="font-bold text-base sm:text-lg mb-4 flex items-center gap-2">
               <Wallet size={18} className="text-primary" /> Payment Method
@@ -442,11 +532,13 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-muted"><span>Delivery</span><span className="text-fg font-medium">{deliveryFee === 0 ? <span className="text-green-600 font-semibold">FREE</span> : `₹${deliveryFee}`}</span></div>
               <div className="flex justify-between text-muted"><span>Taxes</span><span className="text-fg font-medium">₹{taxes}</span></div>
               {tip > 0 && <div className="flex justify-between text-muted"><span>Tip</span><span className="text-fg font-medium">₹{tip}</span></div>}
-              <div className="border-t border-base pt-3 flex justify-between font-bold text-base"><span>To Pay</span><span>₹{total + tip}</span></div>
+              {redeemPts > 0 && <div className="flex justify-between text-yellow-600"><span>Points Discount</span><span>-₹{pointsToDiscount(redeemPts)}</span></div>}
+              {referralDiscount > 0 && <div className="flex justify-between text-green-600"><span>Referral Discount</span><span>-₹{referralDiscount}</span></div>}
+              <div className="border-t border-base pt-3 flex justify-between font-bold text-base"><span>To Pay</span><span>₹{Math.max(0, total + tip - pointsToDiscount(redeemPts) - referralDiscount)}</span></div>
             </div>
             <button type="submit" disabled={placing || deliveryBlocked}
               className="w-full mt-6 bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 rounded-full flex items-center justify-center gap-2 transition-colors disabled:opacity-60">
-              {placing ? 'Placing…' : `Place Order · ₹${total + tip}`} {!placing && <ArrowRight size={18} />}
+              {placing ? 'Placing…' : `Place Order · ₹${Math.max(0, total + tip - pointsToDiscount(redeemPts) - referralDiscount)}`} {!placing && <ArrowRight size={18} />}
             </button>
             {deliveryBlocked && <p className="text-xs text-red-500 text-center mt-2">Delivery not available at this address</p>}
             <p className="text-xs text-muted text-center mt-2">
@@ -462,7 +554,7 @@ export default function CheckoutPage() {
             {itemCount} item{itemCount > 1 ? 's' : ''} · ~{deliveryEta ?? '25–35'} min
             {discount > 0 && <span className="text-green-600 ml-1">· Saved ₹{discount}</span>}
           </span>
-          <span className="font-bold">₹{total + tip}</span>
+          <span className="font-bold">₹{Math.max(0, total + tip - pointsToDiscount(redeemPts) - referralDiscount)}</span>
         </div>
         <button
           type="button"
@@ -470,7 +562,7 @@ export default function CheckoutPage() {
           disabled={placing || deliveryBlocked}
           className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-full flex items-center justify-center gap-2 transition-colors text-sm disabled:opacity-60"
         >
-          {placing ? 'Placing…' : `Place Order · ₹${total + tip}`} {!placing && <ArrowRight size={16} />}
+          {placing ? 'Placing…' : `Place Order · ₹${Math.max(0, total + tip - pointsToDiscount(redeemPts) - referralDiscount)}`} {!placing && <ArrowRight size={16} />}
         </button>
       </div>
     </div>
